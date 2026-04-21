@@ -1,0 +1,55 @@
+{
+  "name": "台股自動追蹤系統",
+  "short_name": "台股追蹤",
+  "description": "個人股票持倉追蹤、警報通知與觀察清單",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f5f3",
+  "theme_color": "#3266ad",
+  "lang": "zh-TW",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icons/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "查看持倉",
+      "short_name": "持倉",
+      "url": "/?tab=portfolio",
+      "icons": [{ "src": "icons/icon-72.png", "sizes": "72x72" }]
+    },
+    {
+      "name": "查看警報",
+      "short_name": "警報",
+      "url": "/?tab=alerts",
+      "icons": [{ "src": "icons/icon-72.png", "sizes": "72x72" }]
+    }
+  ],
+  "prefer_related_applications": false
+}
