@@ -66,4 +66,236 @@
   .nav-btn.active { color: var(--blue); }
 
   #loader { position: fixed; top: 0; left: 0; width: 100%; height: 3px; background: var(--blue); transform: scaleX(0); transform-origin: left; transition: transform 0.3s; z-index: 1001; }
-  #toast { position: fixed; bottom: 100px; left:
+  #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color:#fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; opacity:0; transition:0.3s; }
+</style>
+</head>
+<body>
+
+<div id="loader"></div>
+<header>
+  <div class="logo">台股即時追蹤</div>
+  <button class="refresh-btn" onclick="refreshAllPrices()">🔄 刷新股價</button>
+</header>
+
+<div class="summary-card">
+  <div class="sum-label">總資產價值 (TWD)</div>
+  <div class="sum-value" id="total-assets">$0</div>
+  <div class="sum-grid">
+    <div class="sum-item">
+      <div class="sum-item-label">總預估損益</div>
+      <div id="total-pnl" class="sum-item-val">--</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-item-label">總報酬率</div>
+      <div id="total-pct" class="sum-item-val">--</div>
+    </div>
+  </div>
+</div>
+
+<div class="section active" id="tab-portfolio">
+  <div class="sec-title">我的持倉</div>
+  <div id="holdings-list"></div>
+</div>
+
+<div class="section" id="tab-settings">
+  <div class="sec-title">管理持倉</div>
+  <div class="card">
+    <div class="input-group">
+      <label>股票名稱 (如：台積電)</label>
+      <input type="text" id="new-name">
+    </div>
+    <div class="input-row" style="display:flex; gap:10px;">
+      <div class="input-group" style="flex:1">
+        <label>代號 (如：2330)</label>
+        <input type="text" id="new-code">
+      </div>
+      <div class="input-group" style="flex:1">
+        <label>類型</label>
+        <select id="new-market" style="width:100%; padding:12px; border-radius:12px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+          <option value=".TW">上市 (.TW)</option>
+          <option value=".TWO">上櫃 (.TWO)</option>
+        </select>
+      </div>
+    </div>
+    <div class="input-row" style="display:flex; gap:10px;">
+      <div class="input-group" style="flex:1">
+        <label>股數</label>
+        <input type="number" id="new-shares">
+      </div>
+      <div class="input-group" style="flex:1">
+        <label>平均成本</label>
+        <input type="number" id="new-cost">
+      </div>
+    </div>
+    <button class="save-btn" onclick="addNewStock()">➕ 加入持倉</button>
+  </div>
+
+  <div class="sec-title">現有項目</div>
+  <div id="mgmt-list"></div>
+</div>
+
+<nav>
+  <button class="nav-btn active" id="n-0" onclick="switchTab('portfolio',0)"><span>📊</span>持倉</button>
+  <button class="nav-btn" id="n-1" onclick="switchTab('settings',1)"><span>⚙️</span>設定</button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+// --- 資料初始化 ---
+const DEFAULT_DATA = [
+  { name: '元大台灣50', code: '0050', market: '.TW', shares: 100, cost: 150 },
+  { name: '台積電', code: '2330', market: '.TW', shares: 200, cost: 600 }
+];
+
+let holdings = JSON.parse(localStorage.getItem('my_stocks')) || DEFAULT_DATA;
+let prices = {}; // 暫存抓取到的股價
+
+// --- API 抓取功能 ---
+async function fetchPrice(code, market) {
+  const symbol = code + market;
+  // 使用 Yahoo Finance API (加上 Proxy 避免 CORS)
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1m&range=1d`;
+  
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const result = data.chart.result[0];
+    return {
+      price: result.meta.regularMarketPrice,
+      prevClose: result.meta.chartPreviousClose
+    };
+  } catch (e) {
+    console.error('Fetch error for ' + symbol, e);
+    return null;
+  }
+}
+
+async function refreshAllPrices() {
+  const loader = document.getElementById('loader');
+  loader.style.transform = 'scaleX(0.3)';
+  
+  for (const s of holdings) {
+    const data = await fetchPrice(s.code, s.market);
+    if (data) {
+      prices[s.code] = data;
+    }
+    loader.style.transform = `scaleX(${0.3 + (holdings.indexOf(s)+1)/holdings.length * 0.7})`;
+  }
+  
+  setTimeout(() => loader.style.transform = 'scaleX(0)', 500);
+  renderAll();
+  showToast('股價更新完成');
+}
+
+// --- UI 渲染 ---
+function renderAll() {
+  const list = document.getElementById('holdings-list');
+  const mgmt = document.getElementById('mgmt-list');
+  list.innerHTML = '';
+  mgmt.innerHTML = '';
+
+  let totalValue = 0;
+  let totalCost = 0;
+  let totalPnl = 0;
+
+  holdings.forEach((s, idx) => {
+    const data = prices[s.code] || { price: s.cost, prevClose: s.cost };
+    const currentPrice = data.price;
+    const marketVal = currentPrice * s.shares;
+    const costVal = s.cost * s.shares;
+    const pnl = (currentPrice - s.cost) * s.shares;
+    const pnlPct = ((currentPrice - s.cost) / s.cost * 100).toFixed(2);
+    const dayChange = ((currentPrice - data.prevClose) / data.prevClose * 100).toFixed(2);
+
+    totalValue += marketVal;
+    totalCost += costVal;
+    totalPnl += pnl;
+
+    // 渲染持倉卡片
+    list.innerHTML += `
+      <div class="card">
+        <div class="stock-row">
+          <div class="stock-info">
+            <span class="stock-name">${s.name}</span>
+            <span class="stock-code">${s.code}${s.market}</span>
+          </div>
+          <div class="stock-price-box">
+            <div class="stock-price">$${currentPrice.toLocaleString()}</div>
+            <div class="stock-change ${dayChange >= 0 ? 'up' : 'down'}">
+              今日 ${dayChange >= 0 ? '▲' : '▼'}${Math.abs(dayChange)}%
+            </div>
+          </div>
+        </div>
+        <div class="stock-details">
+          <div><span class="det-label">市值</span><span class="det-val">$${Math.round(marketVal).toLocaleString()}</span></div>
+          <div><span class="det-label">成本</span><span class="det-val">$${s.cost}</span></div>
+          <div><span class="det-label">預估損益</span><span class="det-val ${pnl >=0 ? 'up':'down'}">${pnl >= 0 ? '+':''}${Math.round(pnl).toLocaleString()} (${pnlPct}%)</span></div>
+        </div>
+      </div>
+    `;
+
+    // 渲染管理列表
+    mgmt.innerHTML += `
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px;">
+        <div><b>${s.name}</b> <small>${s.code}</small><br><span style="font-size:11px; color:var(--text3)">${s.shares}股 / 成本${s.cost}</span></div>
+        <button class="del-btn" onclick="deleteStock(${idx})">刪除</button>
+      </div>
+    `;
+  });
+
+  // 更新總計
+  document.getElementById('total-assets').textContent = '$' + Math.round(totalValue).toLocaleString();
+  document.getElementById('total-pnl').textContent = (totalPnl >= 0 ? '+' : '') + Math.round(totalPnl).toLocaleString();
+  document.getElementById('total-pnl').className = 'sum-item-val ' + (totalPnl >= 0 ? 'up' : 'down');
+  const totalPct = totalCost > 0 ? ((totalPnl / totalCost) * 100).toFixed(2) : 0;
+  document.getElementById('total-pct').textContent = totalPct + '%';
+}
+
+// --- 功能邏輯 ---
+function addNewStock() {
+  const name = document.getElementById('new-name').value;
+  const code = document.getElementById('new-code').value;
+  const market = document.getElementById('new-market').value;
+  const shares = parseFloat(document.getElementById('new-shares').value);
+  const cost = parseFloat(document.getElementById('new-cost').value);
+
+  if(!name || !code || !shares || !cost) return alert('請完整填寫');
+
+  holdings.push({ name, code, market, shares, cost });
+  save();
+  document.querySelectorAll('#tab-settings input').forEach(i => i.value = '');
+  refreshAllPrices();
+}
+
+function deleteStock(idx) {
+  if(confirm('確定刪除？')) {
+    holdings.splice(idx, 1);
+    save();
+    renderAll();
+  }
+}
+
+function save() {
+  localStorage.setItem('my_stocks', JSON.stringify(holdings));
+}
+
+function switchTab(id, idx) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  document.getElementById('n-' + idx).classList.add('active');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.opacity = 1;
+  setTimeout(() => t.style.opacity = 0, 2000);
+}
+
+// 啟動
+refreshAllPrices();
+setInterval(refreshAllPrices, 600000); // 每 10 分鐘自動刷新
+</script>
+</body>
+</html>
