@@ -6,8 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="台股追蹤">
-<link rel="manifest" href="manifest.json">
-<title>台股追蹤系統</title>
+<title>台股追蹤系統 - 完整版</title>
 <style>
 :root{
   --blue:#2563eb;--blue-d:#1d4ed8;--blue-l:#eff6ff;
@@ -30,7 +29,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .hdr-actions{display:flex;gap:6px}
 .hdr-btn{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 11px;border-radius:20px;font-size:11px;cursor:pointer;white-space:nowrap}
 .tabs{display:flex;overflow-x:auto;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
 .tab{padding:10px 14px;font-size:13px;color:rgba(255,255,255,.65);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500}
 .tab.active{color:#fff;border-bottom-color:#fff}
 .body{padding:12px 12px 90px;max-width:480px;margin:0 auto}
@@ -44,20 +42,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .up{color:var(--red)}.dn{color:var(--green)}
 .hrow{display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:.5px solid var(--border)}
 .hi{flex:1;min-width:0}
-.hn{font-size:14px;font-weight:600;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.hn{font-size:14px;font-weight:600}
 .hp{text-align:right;min-width:68px}
 .hp .price{font-size:14px;font-weight:700}
 .hpnl{text-align:right;min-width:62px}
 .hpnl .pct{font-size:13px;font-weight:700}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.fg label{font-size:11px;font-weight:600;color:var(--text2)}
+.fg input{padding:10px;border:.5px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-size:14px}
 .btn{width:100%;padding:12px;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
 .btn-p{background:var(--blue);color:#fff}.btn-o{background:none;border:.5px solid var(--border);color:var(--text2)}
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:.5px solid var(--border);display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
 .bnav-btn{flex:1;padding:10px 4px 12px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text2);font-size:10px}
 .bnav-btn.active{color:var(--blue)}
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;z-index:400;opacity:0;transition:opacity .25s;pointer-events:none}
-.toast.show{opacity:1}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinning{animation:spin .7s linear infinite;display:inline-block}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;z-index:400;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
 </style>
 </head>
 <body>
@@ -65,18 +66,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="hdr">
   <div class="hdr-top">
     <div>
-      <div class="hdr-title" id="main-title">台股追蹤</div>
-      <div class="hdr-sub" id="last-upd">尚未更新</div>
+      <div class="hdr-title">台股追蹤系統</div>
+      <div class="hdr-sub" id="last-upd">尚未更新資料</div>
     </div>
     <div class="hdr-actions">
       <button class="hdr-btn" onclick="refreshPrices()"><span id="spin-icon">↻</span> 更新</button>
+      <button class="hdr-btn" onclick="reqNotif()">🔔 通知</button>
     </div>
   </div>
   <div class="tabs">
     <button class="tab active" onclick="sw('portfolio',0,this)">持倉</button>
-    <button class="tab" onclick="sw('trades',1,this)">交易</button>
-    <button class="tab" onclick="sw('watchlist',2,this)">觀察</button>
-    <button class="tab" onclick="sw('settings',4,this)">設定</button>
+    <button class="tab" onclick="sw('trades',1,this)">交易紀錄</button>
+    <button class="tab" onclick="sw('watchlist',2,this)">觀察名單</button>
+    <button class="tab" onclick="sw('alerts',3,this)">即時警報</button>
+    <button class="tab" onclick="sw('settings',4,this)">系統設定</button>
   </div>
 </div>
 
@@ -86,66 +89,86 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="mc"><div class="ml">總市值</div><div class="mv" id="mv">$0</div></div>
       <div class="mc"><div class="ml">總損益</div><div class="mv" id="mpnl">--</div></div>
     </div>
-    <div class="card" id="holdings-list">
-        <div style="text-align:center; padding:20px; color:var(--text3);">尚未載入股價</div>
-    </div>
+    <div class="card" id="holdings-list"></div>
   </div>
 
   <div class="sec" id="tab-trades">
     <div class="sl">新增交易</div>
     <div class="card">
-        <input id="fc" placeholder="股票代號 (如 2330)" style="width:100%; padding:10px; margin-bottom:8px; border-radius:8px; border:1px solid var(--border);">
-        <input type="number" id="fs" placeholder="股數" style="width:100%; padding:10px; margin-bottom:8px; border-radius:8px; border:1px solid var(--border);">
-        <input type="number" id="fp" placeholder="價格" style="width:100%; padding:10px; margin-bottom:8px; border-radius:8px; border:1px solid var(--border);">
-        <button class="btn btn-p" onclick="addTrade()">確認記錄</button>
+      <div class="fg"><label>股票代號</label><input id="tx-code" placeholder="2330"></div>
+      <div class="fg"><label>成交股數</label><input type="number" id="tx-shares" placeholder="1000"></div>
+      <div class="fg"><label>成交價格</label><input type="number" id="tx-price" placeholder="600"></div>
+      <button class="btn btn-p" onclick="addTrade()">確認記錄</button>
     </div>
-    <div id="txlist"></div>
+    <div id="tx-history"></div>
+  </div>
+
+  <div class="sec" id="tab-watchlist">
+    <div class="sl">新增觀察</div>
+    <div class="card">
+      <div class="fg"><label>股票代號</label><input id="watch-code" placeholder="2454"></div>
+      <button class="btn btn-o" onclick="addToWatch()">加入觀察名單</button>
+    </div>
+    <div class="card" id="watchlist-items"></div>
+  </div>
+
+  <div class="sec" id="tab-alerts">
+    <div class="sl">設定價格警報</div>
+    <div class="card">
+      <div class="fg"><label>代號</label><input id="alert-code" placeholder="2330"></div>
+      <div class="fg"><label>當價格低於</label><input type="number" id="alert-low" placeholder="580"></div>
+      <div class="fg"><label>當價格高於</label><input type="number" id="alert-high" placeholder="650"></div>
+      <button class="btn btn-p" onclick="addAlert()">設定警報</button>
+    </div>
+    <div class="sl">目前的警報</div>
+    <div id="active-alerts"></div>
   </div>
 
   <div class="sec" id="tab-settings">
-    <div class="sl">API 設定</div>
+    <div class="sl">API 與 系統設定</div>
     <div class="card">
-      <label style="font-size:12px; color:var(--text2);">Yahoo Finance (RapidAPI) Key</label>
-      <input type="password" id="akey" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid var(--border);">
-      <button class="btn btn-o" onclick="saveSettings()" style="margin-top:10px;">儲存設定</button>
+      <div class="fg"><label>RapidAPI Key</label><input type="password" id="akey"></div>
+      <button class="btn btn-o" onclick="saveSettings()">儲存設定</button>
     </div>
-    <button class="btn" style="color:var(--red);" onclick="confirmReset()">清除所有資料</button>
+    <button class="btn btn-o" style="color:red; border-color:red;" onclick="confirmReset()">清除所有資料</button>
   </div>
 </div>
 
 <div class="bnav">
   <button class="bnav-btn active" id="bn0" onclick="sw('portfolio',0,null)">📊 持倉</button>
-  <button class="bnav-btn" id="bn1" onclick="sw('trades',1,null)">💱 交易</button>
+  <button class="bnav-btn" id="bn2" onclick="sw('watchlist',2,null)">👁 觀察</button>
+  <button class="bnav-btn" id="bn3" onclick="sw('alerts',3,null)">🔔 警報</button>
   <button class="bnav-btn" id="bn4" onclick="sw('settings',4,null)">⚙️ 設定</button>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// --- 資料架構 ---
-let DB = JSON.parse(localStorage.getItem('stkdb_v2') || JSON.stringify({
-  trades: [{code:'2330', shares:1000, price:600, action:'buy'}],
+// --- 資料庫初始化 ---
+let DB = JSON.parse(localStorage.getItem('stk_v3') || JSON.stringify({
+  trades: [],
   watchlist: ['2330', '0050'],
-  settings: {
-    apiKey: '3f74f6e5d8msh13b80ab438e0e49p1edd54jsn72daf4d9c04b'
-  },
+  alerts: [],
+  settings: { apiKey: '3f74f6e5d8msh13b80ab438e0e49p1edd54jsn72daf4d9c04b' },
   prices: {}
 }));
 
-function save() { localStorage.setItem('stkdb_v2', JSON.stringify(DB)); }
+function save() { localStorage.setItem('stk_v3', JSON.stringify(DB)); }
 
-// --- 核心：Yahoo Finance API 串接 ---
+// --- API 邏輯 (Yahoo Finance) ---
 async function refreshPrices() {
   const spin = document.getElementById('spin-icon');
-  const lastUpd = document.getElementById('last-upd');
   spin.classList.add('spinning');
-  lastUpd.textContent = '更新中...';
+  
+  const allCodes = [...new Set([
+    ...DB.trades.map(t => t.code), 
+    ...DB.watchlist, 
+    ...DB.alerts.map(a => a.code)
+  ])];
 
-  const codes = [...new Set([...DB.trades.map(t=>t.code), ...DB.watchlist])];
-  if (codes.length === 0) { spin.classList.remove('spinning'); return; }
+  if (allCodes.length === 0) { spin.classList.remove('spinning'); return; }
 
-  // 補上 .TW 或 .TWO 後綴
-  const symbols = codes.map(c => c.length <= 4 ? c + '.TW' : c + '.TWO').join(',');
+  const symbols = allCodes.map(c => c.includes('.') ? c : (c.length <= 4 ? c + '.TW' : c + '.TWO')).join(',');
   const url = `https://yh-finance.p.rapidapi.com/market/v2/get-quotes?symbols=${symbols}`;
 
   try {
@@ -156,96 +179,151 @@ async function refreshPrices() {
         'X-RapidAPI-Host': 'yh-finance.p.rapidapi.com'
       }
     });
-    
     const data = await res.json();
     const results = data.quoteResponse.result;
 
     results.forEach(s => {
-      const pureCode = s.symbol.split('.')[0];
-      DB.prices[pureCode] = {
+      const code = s.symbol.split('.')[0];
+      DB.prices[code] = {
         price: s.regularMarketPrice,
-        prev: s.regularMarketPreviousClose,
         name: s.shortName,
-        changePct: s.regularMarketChangePercent
+        pct: s.regularMarketChangePercent
       };
     });
 
-    lastUpd.textContent = '最後更新: ' + new Date().toLocaleTimeString();
-    toast('股價已即時更新');
-    renderPortfolio();
+    document.getElementById('last-upd').textContent = '最後更新: ' + new Date().toLocaleTimeString();
+    checkAlerts(); // 每次更新完順便檢查警報
+    renderAll();
+    toast('股價已更新');
   } catch (e) {
-    console.error(e);
-    lastUpd.textContent = '更新失敗';
-    toast('API 連線失敗，請檢查 Key');
+    toast('API 更新失敗，請檢查 Key');
   } finally {
     spin.classList.remove('spinning');
     save();
   }
 }
 
-// --- UI 渲染 ---
+// --- 渲染功能 ---
+function renderAll() {
+  renderPortfolio();
+  renderWatchlist();
+  renderAlerts();
+  renderTrades();
+}
+
 function renderPortfolio() {
-    const list = document.getElementById('holdings-list');
-    const summary = {};
-    
-    DB.trades.forEach(t => {
-        if(!summary[t.code]) summary[t.code] = { shares: 0, cost: 0 };
-        summary[t.code].shares += t.shares;
-        summary[t.code].cost += (t.shares * t.price);
-    });
+  const el = document.getElementById('holdings-list');
+  const summary = {};
+  DB.trades.forEach(t => {
+    if(!summary[t.code]) summary[t.code] = { shares: 0, cost: 0 };
+    summary[t.code].shares += t.shares;
+    summary[t.code].cost += (t.shares * t.price);
+  });
 
-    let totalMV = 0;
-    let totalCost = 0;
-    let html = '';
+  let totalMV = 0, totalCost = 0, html = '';
+  Object.keys(summary).forEach(code => {
+    const s = summary[code]; if(s.shares <= 0) return;
+    const p = DB.prices[code] || { price: 0, name: code };
+    const mv = p.price * s.shares;
+    const pnl = mv - s.cost;
+    totalMV += mv; totalCost += s.cost;
 
-    Object.keys(summary).forEach(code => {
-        const s = summary[code];
-        if(s.shares <= 0) return;
-        
-        const pInfo = DB.prices[code] || { price: s.cost/s.shares, prev: 0, name: code };
-        const mv = pInfo.price * s.shares;
-        const pnl = mv - s.cost;
-        const pnlPct = ((pnl / s.cost) * 100).toFixed(2);
-        
-        totalMV += mv;
-        totalCost += s.cost;
-
-        html += `
-            <div class="hrow">
-                <div class="hi">
-                    <div class="hn">${pInfo.name || code} <span style="font-size:10px; color:var(--text3); font-weight:400;">${code}</span></div>
-                    <div style="font-size:11px; color:var(--text2);">${s.shares} 股 | 均價 ${Math.round(s.cost/s.shares)}</div>
-                </div>
-                <div class="hp">
-                    <div class="price">$${pInfo.price.toLocaleString()}</div>
-                </div>
-                <div class="hpnl ${pnl >= 0 ? 'up' : 'dn'}">
-                    <div class="pct">${pnl >= 0 ? '+' : ''}${pnlPct}%</div>
-                    <div style="font-size:11px;">$${Math.round(pnl).toLocaleString()}</div>
-                </div>
-            </div>
-        `;
-    });
-
-    list.innerHTML = html || '<div style="text-align:center; padding:20px;">尚無持倉</div>';
-    
-    const totalPnl = totalMV - totalCost;
-    document.getElementById('mv').textContent = '$' + Math.round(totalMV).toLocaleString();
-    document.getElementById('mpnl').textContent = (totalPnl >= 0 ? '+' : '') + Math.round(totalPnl).toLocaleString();
-    document.getElementById('mpnl').className = 'mv ' + (totalPnl >= 0 ? 'up' : 'dn');
+    html += `
+      <div class="hrow">
+        <div class="hi"><div class="hn">${p.name} (${code})</div><div style="font-size:11px;color:var(--text2)">${s.shares}股 | 均價 ${Math.round(s.cost/s.shares)}</div></div>
+        <div class="hp"><div class="price">$${p.price}</div></div>
+        <div class="hpnl ${pnl >= 0 ? 'up' : 'dn'}"><div>${pnl >= 0 ? '+' : ''}${Math.round(pnl)}</div><div style="font-size:10px">${((pnl/s.cost)*100).toFixed(2)}%</div></div>
+      </div>`;
+  });
+  el.innerHTML = html;
+  document.getElementById('mv').textContent = '$' + Math.round(totalMV).toLocaleString();
+  const pnlAll = totalMV - totalCost;
+  document.getElementById('mpnl').textContent = (pnlAll >= 0 ? '+' : '') + Math.round(pnlAll).toLocaleString();
+  document.getElementById('mpnl').className = 'mv ' + (pnlAll >= 0 ? 'up' : 'dn');
 }
 
+function renderWatchlist() {
+  const el = document.getElementById('watchlist-items');
+  el.innerHTML = DB.watchlist.map(code => {
+    const p = DB.prices[code] || { price: '--', pct: 0, name: code };
+    return `
+      <div class="hrow">
+        <div class="hi"><div class="hn">${p.name}</div><div style="font-size:11px;color:var(--text2)">${code}</div></div>
+        <div class="hp"><div class="price">$${p.price}</div></div>
+        <div class="hpnl ${p.pct >= 0 ? 'up' : 'dn'}"><div>${p.pct.toFixed(2)}%</div></div>
+        <div onclick="removeWatch('${code}')" style="color:var(--text3); font-size:18px; padding-left:10px;">×</div>
+      </div>`;
+  }).join('');
+}
+
+function renderAlerts() {
+  const el = document.getElementById('active-alerts');
+  el.innerHTML = DB.alerts.map((a, i) => `
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <strong>${a.code}</strong> 
+        <span style="font-size:12px; color:var(--text2);"> (範圍: ${a.low} ~ ${a.high})</span>
+      </div>
+      <button onclick="removeAlert(${i})" style="border:none; background:none; color:var(--red);">刪除</button>
+    </div>
+  `).join('');
+}
+
+function renderTrades() {
+  const el = document.getElementById('tx-history');
+  el.innerHTML = DB.trades.slice().reverse().map(t => `
+    <div class="card" style="font-size:13px; display:flex; justify-content:space-between;">
+      <span>${t.code} | ${t.shares}股 @ $${t.price}</span>
+      <span style="color:var(--text3)">買入</span>
+    </div>
+  `).join('');
+}
+
+// --- 功能性函數 ---
 function addTrade() {
-    const code = document.getElementById('fc').value;
-    const shares = parseInt(document.getElementById('fs').value);
-    const price = parseFloat(document.getElementById('fp').value);
-    if(!code || !shares || !price) return toast('請完整輸入');
-    
-    DB.trades.push({ code, shares, price, action:'buy' });
-    save();
-    toast('紀錄成功');
-    refreshPrices();
+  const code = document.getElementById('tx-code').value.trim();
+  const shares = parseInt(document.getElementById('tx-shares').value);
+  const price = parseFloat(document.getElementById('tx-price').value);
+  if(!code || !shares || !price) return toast('請完整輸入');
+  DB.trades.push({code, shares, price}); save(); refreshPrices();
 }
+
+function addToWatch() {
+  const code = document.getElementById('watch-code').value.trim();
+  if(!code || DB.watchlist.includes(code)) return;
+  DB.watchlist.push(code); save(); refreshPrices();
+}
+
+function removeWatch(code) {
+  DB.watchlist = DB.watchlist.filter(c => c !== code); save(); renderAll();
+}
+
+function addAlert() {
+  const code = document.getElementById('alert-code').value.trim();
+  const low = parseFloat(document.getElementById('alert-low').value);
+  const high = parseFloat(document.getElementById('alert-high').value);
+  if(!code) return;
+  DB.alerts.push({code, low, high}); save(); renderAll(); toast('警報已設定');
+}
+
+function removeAlert(idx) { DB.alerts.splice(idx, 1); save(); renderAll(); }
+
+function checkAlerts() {
+  DB.alerts.forEach(a => {
+    const p = DB.prices[a.code];
+    if (p) {
+      if (p.price <= a.low) sendNotif(`買入訊號：${p.name} 跌破 ${a.low}，現價 ${p.price}`);
+      if (p.price >= a.high) sendNotif(`獲利訊號：${p.name} 突破 ${a.high}，現價 ${p.price}`);
+    }
+  });
+}
+
+function sendNotif(msg) {
+  if (Notification.permission === 'granted') new Notification("台股警報", { body: msg });
+  else toast(msg);
+}
+
+function reqNotif() { Notification.requestPermission(); }
 
 function sw(name, idx, btn) {
   document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
@@ -262,17 +340,15 @@ function toast(msg) {
 }
 
 function saveSettings() {
-    DB.settings.apiKey = document.getElementById('akey').value;
-    save();
-    toast('Key 已儲存');
-    refreshPrices();
+  DB.settings.apiKey = document.getElementById('akey').value.trim();
+  save(); toast('金鑰已儲存'); refreshPrices();
 }
 
-function confirmReset() { if(confirm('確定清除？')) { localStorage.clear(); location.reload(); } }
+function confirmReset() { if(confirm('確定清除所有資料？')) { localStorage.clear(); location.reload(); } }
 
 // 初始化
 document.getElementById('akey').value = DB.settings.apiKey;
-renderPortfolio();
+renderAll();
 refreshPrices();
 </script>
 </body>
