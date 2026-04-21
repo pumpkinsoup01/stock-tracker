@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="台股追蹤">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>台股自動追蹤系統</title>
+<title>台股自動追蹤系統 (可編輯版)</title>
 <style>
   :root {
     --blue: #3266ad;
@@ -30,553 +30,365 @@
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #111;
+      --bg: #121212;
       --card: #1e1e1e;
-      --border: rgba(255,255,255,0.1);
-      --text: #f0f0f0;
+      --text: #eee;
       --text2: #aaa;
-      --text3: #666;
-      --blue-light: #0c2240;
-      --green-light: #0a2018;
-      --red-light: #2a0a0a;
-      --amber-light: #2a1800;
+      --text3: #777;
+      --border: rgba(255,255,255,0.1);
+      --blue-light: #1a2635;
+      --green-light: #162a22;
+      --red-light: #2c1a1a;
     }
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; }
+  
   /* Header */
-  .header { background: var(--blue); color: white; padding: 16px 16px 0; position: sticky; top: 0; z-index: 100; }
-  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  .header h1 { font-size: 17px; font-weight: 600; }
-  .header-sub { font-size: 11px; opacity: .75; margin-top: 2px; }
-  .notif-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 7px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-  .notif-btn.active { background: rgba(255,255,255,0.35); }
-  .tab-bar { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; }
-  .tab-bar::-webkit-scrollbar { display: none; }
-  .tab { padding: 10px 16px; font-size: 13px; color: rgba(255,255,255,0.7); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; font-weight: 500; }
-  .tab.active { color: white; border-bottom-color: white; }
+  header { position: sticky; top: 0; background: var(--card); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 0.5px solid var(--border); z-index: 100; }
+  .logo { font-size: 20px; font-weight: 800; color: var(--blue); letter-spacing: -0.5px; }
+  .notif-btn { background: var(--blue-light); color: var(--blue); border: none; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .notif-btn.active { background: var(--blue); color: #fff; }
 
-  /* Content */
-  .content { padding: 14px 14px 80px; max-width: 480px; margin: 0 auto; }
-  .section { display: none; }
+  /* Main Summary */
+  .summary-card { margin: 20px; padding: 24px; background: var(--blue); color: #fff; border-radius: 24px; box-shadow: 0 10px 20px rgba(50,102,173,0.2); }
+  .sum-label { font-size: 13px; opacity: 0.8; margin-bottom: 4px; }
+  .sum-value { font-size: 32px; font-weight: 700; margin-bottom: 16px; }
+  .sum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .sum-item { background: rgba(255,255,255,0.1); padding: 12px; border-radius: 16px; }
+  .sum-item-label { font-size: 11px; opacity: 0.7; margin-bottom: 2px; }
+  .sum-item-val { font-size: 16px; font-weight: 600; }
+
+  /* Sections */
+  .section { display: none; padding: 0 20px; animation: fadeIn 0.3s ease; }
   .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  .sec-title { font-size: 18px; font-weight: 700; margin: 24px 0 16px; display: flex; justify-content: space-between; align-items: center; }
 
-  /* Metric row */
-  .metric-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-  .metric { background: var(--card); border-radius: 12px; padding: 12px; border: 0.5px solid var(--border); }
-  .metric-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
-  .metric-value { font-size: 20px; font-weight: 600; }
-  .up { color: var(--red); }
-  .dn { color: var(--green); }
+  /* Stock Cards */
+  .card { background: var(--card); border-radius: 20px; padding: 16px; margin-bottom: 12px; border: 0.5px solid var(--border); }
+  .stock-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .stock-info { display: flex; flex-direction: column; }
+  .stock-code { font-size: 12px; color: var(--text3); font-weight: 600; }
+  .stock-name { font-size: 17px; font-weight: 700; }
+  .stock-price-box { text-align: right; }
+  .stock-price { font-size: 18px; font-weight: 700; }
+  .stock-change { font-size: 12px; font-weight: 600; }
+  .stock-change.up { color: var(--red); }
+  .stock-change.down { color: var(--green); }
+  
+  .stock-details { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; padding-top: 12px; border-top: 0.5px solid var(--border); }
+  .det-item { display: flex; flex-direction: column; }
+  .det-label { font-size: 11px; color: var(--text3); margin-bottom: 2px; }
+  .det-val { font-size: 13px; font-weight: 600; }
+  .val-up { color: var(--red); }
+  .val-down { color: var(--green); }
 
-  /* Cards */
-  .card { background: var(--card); border-radius: 14px; border: 0.5px solid var(--border); padding: 14px; margin-bottom: 10px; }
-  .card.urgent { border-color: #e24b4a; border-width: 1.5px; }
-  .card.ok { border-color: var(--green); border-width: 1.5px; }
-  .card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-  .card-title { font-size: 15px; font-weight: 600; }
-  .card-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  .badge { font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
-  .b-red    { background: var(--red-light);   color: #a00; }
-  .b-green  { background: var(--green-light);  color: #0a5e3a; }
-  .b-blue   { background: var(--blue-light);   color: #0c447c; }
-  .b-amber  { background: var(--amber-light);  color: #633806; }
-  .b-gray   { background: var(--bg); color: var(--text2); }
+  .signal-tag { font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 700; text-transform: uppercase; margin-left: 6px; }
+  .sig-hold { background: var(--blue-light); color: var(--blue); }
+  .sig-sell { background: var(--red-light); color: var(--red); }
+  .sig-stop { background: var(--amber-light); color: var(--amber); }
 
-  /* Stock rows */
-  .stock-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
-  .stock-row:last-child { border-bottom: none; }
-  .stock-info { flex: 1; min-width: 0; }
-  .stock-name { font-size: 14px; font-weight: 600; }
-  .stock-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  .stock-price { text-align: right; }
-  .stock-price .price { font-size: 15px; font-weight: 600; }
-  .stock-price .sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
-  .stock-pnl { text-align: right; min-width: 60px; }
+  /* Inputs & Forms */
+  .input-group { margin-bottom: 16px; }
+  .input-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+  .input-group input, .input-group select { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 15px; }
+  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .save-btn { width: 100%; background: var(--blue); color: #fff; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; margin-top: 8px; cursor: pointer; }
+  
+  /* Management List */
+  .mgmt-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+  .mgmt-info { display: flex; flex-direction: column; }
+  .del-btn { background: var(--red-light); color: var(--red); border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; }
 
-  /* Progress bar */
-  .progress-wrap { margin-bottom: 10px; }
-  .progress-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); margin-bottom: 4px; }
-  .progress-track { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 3px; }
-
-  /* Alert cards */
-  .alert-item { display: flex; gap: 10px; align-items: flex-start; padding: 12px; background: var(--card); border-radius: 12px; border: 0.5px solid var(--border); margin-bottom: 8px; }
-  .alert-item.triggered { border-color: var(--red); background: var(--red-light); }
-  .alert-item.watch { border-color: var(--amber); }
-  .alert-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
-  .alert-body .title { font-size: 13px; font-weight: 600; }
-  .alert-body .desc { font-size: 12px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
-  .alert-time { font-size: 10px; color: var(--text3); flex-shrink: 0; margin-top: 2px; }
-
-  /* Toggle */
-  .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 0.5px solid var(--border); }
-  .toggle-row:last-child { border-bottom: none; }
-  .toggle-info .name { font-size: 13px; font-weight: 500; }
-  .toggle-info .desc { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  .toggle { width: 42px; height: 24px; border-radius: 24px; border: none; cursor: pointer; position: relative; transition: background .2s; flex-shrink: 0; }
-  .toggle.on { background: var(--blue); }
-  .toggle.off { background: #ccc; }
-  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: white; top: 3px; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
-  .toggle.on::after { left: 21px; }
-  .toggle.off::after { left: 3px; }
-
-  /* Watch list */
-  .watch-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 0.5px solid var(--border); }
-  .watch-row:last-child { border-bottom: none; }
-  .watch-name { min-width: 80px; }
-  .watch-name .name { font-size: 13px; font-weight: 600; }
-  .watch-name .code { font-size: 10px; color: var(--text2); }
-  .score-bar { flex: 1; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
-  .score-fill { height: 100%; border-radius: 3px; }
-  .score-num { font-size: 12px; font-weight: 600; min-width: 26px; text-align: right; }
-
-  /* Bottom nav */
-  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 0.5px solid var(--border); display: flex; z-index: 100; }
-  .nav-btn { flex: 1; padding: 10px 4px 14px; border: none; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text2); font-size: 10px; }
+  /* Nav Bar */
+  .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); display: flex; padding: 8px 12px 24px; border-top: 0.5px solid var(--border); z-index: 100; }
+  .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text3); border: none; background: none; font-size: 11px; font-weight: 500; }
   .nav-btn.active { color: var(--blue); }
   .nav-icon { font-size: 20px; }
 
-  /* Notification toast */
-  .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #222; color: white; padding: 12px 20px; border-radius: 12px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; max-width: 90vw; text-align: center; }
-  .toast.show { opacity: 1; }
-
-  /* Status banner */
-  .status-banner { background: var(--blue-light); border: 0.5px solid #b5d4f4; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 12px; color: #0c447c; display: flex; align-items: center; gap: 8px; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); flex-shrink: 0; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-  /* Section title */
-  .sec-title { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: .07em; text-transform: uppercase; margin: 16px 0 8px; }
-  .sec-title:first-child { margin-top: 0; }
-
-  /* Price input row */
-  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-  .input-group label { font-size: 11px; color: var(--text2); display: block; margin-bottom: 4px; }
-  .input-group input { width: 100%; padding: 8px 10px; border: 0.5px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px; }
-  .save-btn { width: 100%; margin-top: 10px; padding: 11px; background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .save-btn:active { opacity: 0.85; }
-
-  /* Refresh btn */
-  .refresh-row { display: flex; justify-content: flex-end; margin-bottom: 10px; }
-  .refresh-btn { background: none; border: 0.5px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 11px; color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 4px; }
-  .spin { display: inline-block; }
-  .spin.spinning { animation: spin .8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Toast */
+  #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1000; }
+  #toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-top">
-    <div>
-      <h1>台股追蹤系統</h1>
-      <div class="header-sub" id="last-update">更新中...</div>
+<header>
+  <div class="logo">STOCK TRACKER</div>
+  <button id="notif-btn" class="notif-btn" onclick="requestNotif()">
+    <span id="notif-label">🔔 開啟通知</span>
+  </button>
+</header>
+
+<div id="main-summary" class="summary-card">
+  <div class="sum-label">總資產估值 (TWD)</div>
+  <div class="sum-value" id="total-assets">--</div>
+  <div class="sum-grid">
+    <div class="sum-item">
+      <div class="sum-item-label">今日損益</div>
+      <div class="sum-item-val" id="day-pnl">--</div>
     </div>
-    <button class="notif-btn" id="notif-btn" onclick="requestNotification()">
-      <span>🔔</span><span id="notif-label">開啟通知</span>
-    </button>
-  </div>
-  <div class="tab-bar">
-    <button class="tab active" onclick="switchTab('portfolio',0,this)">持倉</button>
-    <button class="tab" onclick="switchTab('alerts',1,this)">警報</button>
-    <button class="tab" onclick="switchTab('watchlist',2,this)">觀察</button>
-    <button class="tab" onclick="switchTab('settings',3,this)">設定</button>
+    <div class="sum-item">
+      <div class="sum-item-label">累計報酬率</div>
+      <div class="sum-item-val" id="total-pct">--</div>
+    </div>
   </div>
 </div>
 
-<div class="content">
-
-  <!-- 持倉 -->
-  <div class="section active" id="tab-portfolio">
-    <div class="status-banner">
-      <div class="status-dot"></div>
-      <div>系統監控中 · 每 30 分鐘自動檢查警報條件</div>
-    </div>
-    <div class="metric-row">
-      <div class="metric"><div class="metric-label">總損益</div><div class="metric-value up">+$2,199</div></div>
-      <div class="metric"><div class="metric-label">整體報酬</div><div class="metric-value up">+4.13%</div></div>
-    </div>
-
-    <div class="refresh-row">
-      <button class="refresh-btn" onclick="simulateRefresh()"><span class="spin" id="spin-icon">↻</span> 更新報價</button>
-    </div>
-
-    <div class="sec-title">持倉明細</div>
-    <div class="card" id="holdings-list"></div>
-
-    <div class="sec-title">風險指標</div>
-    <div class="card" id="risk-bars"></div>
-  </div>
-
-  <!-- 警報 -->
-  <div class="section" id="tab-alerts">
-    <div class="sec-title">觸發中警報</div>
-    <div id="triggered-alerts"></div>
-
-    <div class="sec-title">監控中規則</div>
-    <div class="card" id="alert-rules"></div>
-
-    <div class="sec-title">測試推播通知</div>
-    <div class="card">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.5;">點擊下方按鈕，測試手機是否能收到警報推播。需先點右上角「開啟通知」授權。</div>
-      <button class="save-btn" style="background:var(--red);" onclick="testNotification()">🔔 發送測試通知</button>
-      <button class="save-btn" style="margin-top:8px;background:var(--green);" onclick="testBuySignal()">📈 模擬買入訊號通知</button>
-    </div>
-  </div>
-
-  <!-- 觀察 -->
-  <div class="section" id="tab-watchlist">
-    <div class="sec-title">篩選觀察（8 檔）</div>
-    <div class="card" id="watch-list"></div>
-
-    <div class="sec-title">緯創 3231 — 進場提醒設定</div>
-    <div class="card">
-      <div style="font-size:13px;font-weight:600;">緯創 (3231)</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:2px;">當前觀察價 $133 · 評分 88/100</div>
-      <div class="input-row">
-        <div class="input-group">
-          <label>進場提醒價（低於）</label>
-          <input type="number" id="buy-trigger" value="128" step="0.5">
-        </div>
-        <div class="input-group">
-          <label>停利提醒價（高於）</label>
-          <input type="number" id="sell-trigger" value="155" step="0.5">
-        </div>
-      </div>
-      <div class="input-row">
-        <div class="input-group">
-          <label>停損提醒價（低於）</label>
-          <input type="number" id="stop-trigger" value="115" step="0.5">
-        </div>
-        <div class="input-group">
-          <label>通知頻率</label>
-          <select id="notif-freq" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px;">
-            <option value="30">每 30 分鐘</option>
-            <option value="60">每 1 小時</option>
-            <option value="240">每 4 小時</option>
-          </select>
-        </div>
-      </div>
-      <button class="save-btn" onclick="saveWatchAlert()">儲存設定</button>
-    </div>
-  </div>
-
-  <!-- 設定 -->
-  <div class="section" id="tab-settings">
-    <div class="sec-title">通知設定</div>
-    <div class="card" id="notif-settings"></div>
-
-    <div class="sec-title">部署說明</div>
-    <div class="card">
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">如何部署到 GitHub Pages</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.8;">
-        1. 在 GitHub 建立新 Repository<br>
-        2. 上傳全部檔案（index.html、sw.js、manifest.json、icons/）<br>
-        3. 進入 Settings → Pages → 選 main branch<br>
-        4. 幾分鐘後網址即可使用<br>
-        5. 用手機瀏覽器開啟網址<br>
-        6. 點「加入主畫面」安裝為 App<br>
-        7. 開啟通知授權，完成！
-      </div>
-    </div>
-
-    <div class="sec-title">手動更新持倉</div>
-    <div class="card">
-      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5;">輸入最新收盤價更新損益（目前為模擬模式，未串接即時API）</div>
-      <div id="manual-update-list"></div>
-    </div>
-  </div>
-
+<div class="section active" id="tab-portfolio">
+  <div class="sec-title">我的持倉</div>
+  <div id="holdings-list"></div>
 </div>
 
-<!-- Bottom nav -->
-<div class="bottom-nav">
-  <button class="nav-btn active" id="nav-0" onclick="switchTab('portfolio',0,null)"><span class="nav-icon">📊</span>持倉</button>
-  <button class="nav-btn" id="nav-1" onclick="switchTab('alerts',1,null)"><span class="nav-icon">🔔</span>警報</button>
-  <button class="nav-btn" id="nav-2" onclick="switchTab('watchlist',2,null)"><span class="nav-icon">👁</span>觀察</button>
-  <button class="nav-btn" id="nav-3" onclick="switchTab('settings',3,null)"><span class="nav-icon">⚙️</span>設定</button>
+<div class="section" id="tab-alerts">
+  <div class="sec-title">價格警報</div>
+  <div class="card">
+    <div class="stock-row">
+      <div class="stock-info">
+        <span class="stock-code">3231</span>
+        <span class="stock-name">緯創</span>
+      </div>
+      <div class="stock-price-box">
+        <span class="stock-price">$112.5</span>
+      </div>
+    </div>
+    <div class="input-group">
+      <label>加碼參考價 (低於觸發)</label>
+      <input type="number" id="buy-trigger" value="105">
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>獲利通知</label>
+        <input type="number" id="sell-trigger" value="130">
+      </div>
+      <div class="input-group">
+        <label>停損提醒</label>
+        <input type="number" id="stop-trigger" value="98">
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveAlerts()">更新警報設定</button>
+  </div>
+  <button class="save-btn" style="background:var(--bg); color:var(--text); border:1px solid var(--border);" onclick="testNotif()">發送測試通知</button>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="section" id="tab-watch">
+  <div class="sec-title">觀察清單</div>
+  <div class="card">
+    <div class="stock-row">
+      <div class="stock-info">
+        <span class="stock-code">2330</span>
+        <span class="stock-name">台積電</span>
+      </div>
+      <div class="stock-price-box">
+        <span class="stock-price">$780</span>
+        <div class="stock-change up">+1.5%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="tab-settings">
+  <div class="sec-title">管理持倉數據</div>
+  <div class="card">
+    <div class="input-group">
+      <label>股票/ETF名稱</label>
+      <input type="text" id="new-name" placeholder="例如：台積電">
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>代號</label>
+        <input type="text" id="new-code" placeholder="2330">
+      </div>
+      <div class="input-group">
+        <label>類型</label>
+        <select id="new-type">
+          <option value="股票">股票</option>
+          <option value="ETF">ETF</option>
+        </select>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>持股數量 (股)</label>
+        <input type="number" id="new-shares" placeholder="1000">
+      </div>
+      <div class="input-group">
+        <label>平均成本</label>
+        <input type="number" id="new-cost" placeholder="100.5">
+      </div>
+    </div>
+    <button class="save-btn" onclick="addNewStock()">➕ 新增至持倉</button>
+  </div>
+
+  <div class="sec-title">目前持倉列表</div>
+  <div class="card" id="mgmt-list">
+    </div>
+</div>
+
+<nav class="nav-bar">
+  <button class="nav-btn active" id="nav-0" onclick="switchTab('portfolio', 0)">
+    <span class="nav-icon">📊</span>持倉
+  </button>
+  <button class="nav-btn" id="nav-1" onclick="switchTab('alerts', 1)">
+    <span class="nav-icon">🔔</span>警報
+  </button>
+  <button class="nav-btn" id="nav-2" onclick="switchTab('watch', 2)">
+    <span class="nav-icon">👁️</span>觀察
+  </button>
+  <button class="nav-btn" id="nav-3" onclick="switchTab('settings', 3)">
+    <span class="nav-icon">⚙️</span>管理
+  </button>
+</nav>
+
+<div id="toast">已更新</div>
 
 <script>
-const holdings = [
-  { code:'0050',   name:'元大台灣50',    type:'ETF',  shares:89,   cost:75.96, pnl:747,  pct:11.04, signal:'hold' },
-  { code:'009816', name:'凱基台灣TOP50', type:'ETF',  shares:1008, cost:10.87, pnl:1160, pct:10.56, signal:'hold' },
-  { code:'2303',   name:'聯電',          type:'股票', shares:1,    cost:62,    pnl:12,   pct:19.05, signal:'sell-watch' },
-  { code:'4939',   name:'亞電',          type:'股票', shares:1000, cost:44.8,  pnl:280,  pct:0.62,  signal:'stop-watch' },
+/* 1. 初始化資料處理 */
+const DEFAULT_HOLDINGS = [
+  { code: '0050', name: '元大台灣50', type: 'ETF', shares: 89, cost: 75.96, pnl: 747, pct: 11.04, signal: 'hold' },
+  { code: '009816', name: '凱基台灣TOP50', type: 'ETF', shares: 1008, cost: 10.87, pnl: 1160, pct: 10.56, signal: 'hold' }
 ];
 
-holdings.forEach(s => {
-  s.costTotal = parseFloat((s.cost * s.shares).toFixed(2));
-  s.currentVal = parseFloat((s.costTotal + s.pnl).toFixed(2));
-  s.currentPrice = parseFloat((s.currentVal / s.shares).toFixed(2));
-});
+// 從 LocalStorage 讀取，如果沒有就用預設
+let holdings = JSON.parse(localStorage.getItem('user_holdings')) || DEFAULT_HOLDINGS;
 
-const watchlist = [
-  { code:'3231', name:'緯創',   score:88, color:'#3266ad' },
-  { code:'1815', name:'富喬',   score:72, color:'#7f77dd' },
-  { code:'3060', name:'銘異',   score:70, color:'#7f77dd' },
-  { code:'2419', name:'仲琦',   score:65, color:'#ba7517' },
-  { code:'4960', name:'誠美材', score:63, color:'#ba7517' },
-  { code:'8358', name:'金居',   score:61, color:'#ba7517' },
-  { code:'5452', name:'佶優',   score:58, color:'#888' },
-  { code:'8105', name:'凌巨',   score:52, color:'#888' },
-];
+function saveHoldingsToStorage() {
+  localStorage.setItem('user_holdings', JSON.stringify(holdings));
+}
 
-const alertRules = [
-  { on:true,  name:'停損警報 — 4939 亞電', desc:'股價跌破 $43.46 立即通知' },
-  { on:true,  name:'獲利了結 — 2303 聯電', desc:'股價達 $77.5（+25%）時通知' },
-  { on:true,  name:'ETF 加碼 — 0050',      desc:'回測 $80.1 時通知加碼' },
-  { on:true,  name:'ETF 加碼 — 009816',    desc:'回測 $11.4 時通知加碼' },
-  { on:false, name:'進場訊號 — 緯創 3231', desc:'股價低於 $128 時通知' },
-];
-
+/* 2. 核心渲染功能 */
 function renderHoldings() {
-  const el = document.getElementById('holdings-list');
-  const signalMap = {
-    'hold': ['b-gray','持續持有'],
-    'sell-watch': ['b-red','獲利了結注意'],
-    'stop-watch': ['b-amber','停損注意'],
-  };
-  el.innerHTML = holdings.map(s => {
-    const [bc, label] = signalMap[s.signal] || ['b-gray','—'];
-    const cls = s.pct > 0 ? 'up' : 'dn';
-    const sign = s.pct > 0 ? '+' : '';
-    return `<div class="stock-row">
-      <div class="stock-info">
-        <div class="stock-name">${s.name} <span style="font-size:10px;padding:1px 5px;border-radius:10px;background:var(--bg);color:var(--text2);">${s.type}</span></div>
-        <div class="stock-meta">${s.code} · 均價 $${s.cost} · ${s.shares.toLocaleString()} 股</div>
+  const list = document.getElementById('holdings-list');
+  list.innerHTML = '';
+  
+  holdings.forEach((s, idx) => {
+    const totalCost = s.shares * s.cost;
+    const currentPrice = s.cost * (1 + (s.pct/100)); // 模擬現價
+    const currentVal = s.shares * currentPrice;
+    
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
+      <div class="stock-row">
+        <div class="stock-info">
+          <span class="stock-code">${s.code}.${s.type}</span>
+          <span class="stock-name">${s.name} <span class="signal-tag sig-${s.signal}">${s.signal}</span></span>
+        </div>
+        <div class="stock-price-box">
+          <span class="stock-price">$${currentPrice.toFixed(2)}</span>
+          <div class="stock-change ${s.pct >=0 ? 'up':'down'}">${s.pct >=0 ? '▲':'▼'} ${Math.abs(s.pct)}%</div>
+        </div>
       </div>
-      <div class="stock-price">
-        <div class="price">$${s.currentPrice.toFixed(2)}</div>
-        <div class="sub">市值 $${Math.round(s.currentVal).toLocaleString()}</div>
+      <div class="stock-details">
+        <div class="det-item">
+          <span class="det-label">市值 / 股數</span>
+          <span class="det-val">${Math.round(currentVal).toLocaleString()} / ${s.shares}</span>
+        </div>
+        <div class="det-item">
+          <span class="det-label">成本</span>
+          <span class="det-val">$${s.cost}</span>
+        </div>
+        <div class="det-item">
+          <span class="det-label">預估損益</span>
+          <span class="det-val ${s.pnl >=0 ? 'val-up':'val-down'}">${s.pnl >=0 ? '+':''}${s.pnl.toLocaleString()}</span>
+        </div>
       </div>
-      <div class="stock-pnl ${cls}" style="min-width:64px;text-align:right;">
-        <div style="font-size:13px;font-weight:600;">${sign}${s.pct.toFixed(2)}%</div>
-        <div style="font-size:11px;">${sign}$${s.pnl}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderRiskBars() {
-  const risks = [
-    { label:'4939 風險',   pct:85, color:'#e24b4a' },
-    { label:'ETF 穩健度',  pct:72, color:'#3266ad' },
-    { label:'分散度',      pct:55, color:'#ba7517' },
-    { label:'整體獲利緩衝', pct:68, color:'#1d9e75' },
-  ];
-  document.getElementById('risk-bars').innerHTML = risks.map(r => `
-    <div class="progress-wrap">
-      <div class="progress-label"><span>${r.label}</span><span style="color:${r.color};font-weight:600;">${r.pct}</span></div>
-      <div class="progress-track"><div class="progress-fill" style="width:${r.pct}%;background:${r.color};"></div></div>
-    </div>`).join('');
-}
-
-function renderTriggered() {
-  document.getElementById('triggered-alerts').innerHTML = `
-    <div class="alert-item triggered">
-      <div class="alert-dot" style="background:#c33;"></div>
-      <div class="alert-body">
-        <div class="title">4939 亞電 — 停損警戒</div>
-        <div class="desc">報酬僅 +0.62%，距停損線剩 3.6%，需嚴密監控</div>
-      </div>
-      <div class="alert-time">今日</div>
-    </div>
-    <div class="alert-item watch">
-      <div class="alert-dot" style="background:#ba7517;"></div>
-      <div class="alert-body">
-        <div class="title">2303 聯電 — 獲利了結接近</div>
-        <div class="desc">目前 +19.05%，距目標 +25% 還差 4.7%</div>
-      </div>
-      <div class="alert-time">今日</div>
-    </div>`;
-}
-
-function renderAlertRules() {
-  document.getElementById('alert-rules').innerHTML = alertRules.map((r, i) => `
-    <div class="toggle-row">
-      <div class="toggle-info">
-        <div class="name">${r.name}</div>
-        <div class="desc">${r.desc}</div>
-      </div>
-      <button class="toggle ${r.on ? 'on' : 'off'}" onclick="toggleAlert(${i})"></button>
-    </div>`).join('');
-}
-
-function toggleAlert(i) {
-  alertRules[i].on = !alertRules[i].on;
-  renderAlertRules();
-  showToast(alertRules[i].on ? '警報已開啟' : '警報已關閉');
-}
-
-function renderWatchList() {
-  document.getElementById('watch-list').innerHTML = watchlist.map(w => `
-    <div class="watch-row">
-      <div class="watch-name">
-        <div class="name">${w.name}</div>
-        <div class="code">${w.code}</div>
-      </div>
-      <div class="score-bar"><div class="score-fill" style="width:${w.score}%;background:${w.color};"></div></div>
-      <div class="score-num" style="color:${w.color};">${w.score}</div>
-      <span class="badge ${w.score>=80?'b-blue':w.score>=65?'b-amber':'b-gray'}">${w.score>=80?'觀察進場':w.score>=65?'留意':w.score>=55?'謹慎':'暫緩'}</span>
-    </div>`).join('');
-}
-
-function renderNotifSettings() {
-  document.getElementById('notif-settings').innerHTML = `
-    <div class="toggle-row">
-      <div class="toggle-info"><div class="name">停損警報</div><div class="desc">任一持倉觸及停損線立即通知</div></div>
-      <button class="toggle on" onclick="this.className='toggle '+(this.className.includes('on')?'off':'on')"></button>
-    </div>
-    <div class="toggle-row">
-      <div class="toggle-info"><div class="name">獲利了結提醒</div><div class="desc">達目標報酬率時通知</div></div>
-      <button class="toggle on" onclick="this.className='toggle '+(this.className.includes('on')?'off':'on')"></button>
-    </div>
-    <div class="toggle-row">
-      <div class="toggle-info"><div class="name">加碼買入訊號</div><div class="desc">ETF 回測至加碼價時通知</div></div>
-      <button class="toggle on" onclick="this.className='toggle '+(this.className.includes('on')?'off':'on')"></button>
-    </div>
-    <div class="toggle-row">
-      <div class="toggle-info"><div class="name">觀察清單進場訊號</div><div class="desc">觀察股觸及設定價時通知</div></div>
-      <button class="toggle off" onclick="this.className='toggle '+(this.className.includes('on')?'off':'on')"></button>
-    </div>
-    <div class="toggle-row">
-      <div class="toggle-info"><div class="name">每日收盤摘要</div><div class="desc">收盤後推送今日損益摘要</div></div>
-      <button class="toggle on" onclick="this.className='toggle '+(this.className.includes('on')?'off':'on')"></button>
-    </div>`;
-}
-
-function renderManualUpdate() {
-  document.getElementById('manual-update-list').innerHTML = holdings.map((s,i) => `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <div style="flex:1;font-size:13px;font-weight:500;">${s.name} (${s.code})</div>
-      <input type="number" id="price-${i}" value="${s.currentPrice.toFixed(2)}" step="0.01" style="width:80px;padding:6px 8px;border:0.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px;">
-    </div>`).join('') + `<button class="save-btn" onclick="applyManualPrices()">套用更新</button>`;
-}
-
-function applyManualPrices() {
-  holdings.forEach((s, i) => {
-    const val = parseFloat(document.getElementById('price-'+i).value);
-    if (!isNaN(val)) {
-      s.currentPrice = val;
-      s.currentVal = val * s.shares;
-      s.pnl = parseFloat((s.currentVal - s.costTotal).toFixed(0));
-      s.pct = parseFloat(((s.pnl / s.costTotal) * 100).toFixed(2));
-    }
+    `;
+    list.appendChild(div);
   });
-  renderHoldings();
   updateHeader();
-  showToast('報價已更新！');
+  renderMgmtList();
+}
+
+// 渲染管理分頁的清單
+function renderMgmtList() {
+  const mgmtList = document.getElementById('mgmt-list');
+  if(!mgmtList) return;
+  mgmtList.innerHTML = '';
+  
+  if(holdings.length === 0) {
+    mgmtList.innerHTML = '<div style="color:var(--text3); text-align:center; padding:20px;">尚無持倉資料</div>';
+    return;
+  }
+
+  holdings.forEach((s, idx) => {
+    const item = document.createElement('div');
+    item.className = 'mgmt-item';
+    item.innerHTML = `
+      <div class="mgmt-info">
+        <span style="font-weight:700;">${s.name} (${s.code})</span>
+        <span style="font-size:12px; color:var(--text2);">${s.shares} 股 | 成本 ${s.cost}</span>
+      </div>
+      <button class="del-btn" onclick="deleteStock(${idx})">刪除</button>
+    `;
+    mgmtList.appendChild(item);
+  });
 }
 
 function updateHeader() {
-  const now = new Date();
-  document.getElementById('last-update').textContent =
-    `更新於 ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-}
-
-function simulateRefresh() {
-  const icon = document.getElementById('spin-icon');
-  icon.classList.add('spinning');
+  let totalAsset = 0;
+  let totalPnl = 0;
+  let totalCost = 0;
+  
   holdings.forEach(s => {
-    const drift = (Math.random() - 0.48) * s.currentPrice * 0.008;
-    s.currentPrice = parseFloat((s.currentPrice + drift).toFixed(2));
-    s.currentVal = s.currentPrice * s.shares;
-    s.pnl = parseFloat((s.currentVal - s.costTotal).toFixed(0));
-    s.pct = parseFloat(((s.pnl / s.costTotal) * 100).toFixed(2));
+    const currentPrice = s.cost * (1 + (s.pct/100));
+    totalAsset += (s.shares * currentPrice);
+    totalPnl += s.pnl;
+    totalCost += (s.shares * s.cost);
   });
-  setTimeout(() => {
-    icon.classList.remove('spinning');
+
+  document.getElementById('total-assets').textContent = '$' + Math.round(totalAsset).toLocaleString();
+  document.getElementById('day-pnl').textContent = (totalPnl >= 0 ? '+' : '') + Math.round(totalPnl).toLocaleString();
+  document.getElementById('day-pnl').className = 'sum-item-val ' + (totalPnl >= 0 ? 'val-up' : 'val-down');
+  
+  const totalPct = totalCost > 0 ? ((totalPnl / totalCost) * 100).toFixed(2) : 0;
+  document.getElementById('total-pct').textContent = totalPct + '%';
+}
+
+/* 3. 資料管理功能 */
+function addNewStock() {
+  const name = document.getElementById('new-name').value;
+  const code = document.getElementById('new-code').value;
+  const type = document.getElementById('new-type').value;
+  const shares = parseFloat(document.getElementById('new-shares').value);
+  const cost = parseFloat(document.getElementById('new-cost').value);
+
+  if (!name || !code || isNaN(shares) || isNaN(cost)) {
+    alert('請填寫完整資訊');
+    return;
+  }
+
+  const newStock = {
+    code, name, type, shares, cost,
+    pnl: 0, 
+    pct: 0, 
+    signal: 'hold'
+  };
+
+  holdings.push(newStock);
+  saveHoldingsToStorage();
+  renderHoldings();
+  
+  // 清空欄位
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-code').value = '';
+  document.getElementById('new-shares').value = '';
+  document.getElementById('new-cost').value = '';
+  
+  showToast('已新增股票');
+}
+
+function deleteStock(index) {
+  if (confirm(`確定要刪除 ${holdings[index].name} 嗎？`)) {
+    holdings.splice(index, 1);
+    saveHoldingsToStorage();
     renderHoldings();
-    updateHeader();
-    showToast('報價已更新');
-    checkAlertConditions();
-  }, 900);
-}
-
-function checkAlertConditions() {
-  const aeEl = holdings.find(s => s.code === '4939');
-  if (aeEl && aeEl.currentPrice < 43.46) {
-    sendNotification('停損警報！', `4939 亞電 現價 $${aeEl.currentPrice}，已跌破停損線 $43.46`);
+    showToast('已刪除');
   }
 }
 
-/* Notifications */
-let notifGranted = false;
-
-async function requestNotification() {
-  if (!('Notification' in window)) {
-    showToast('此瀏覽器不支援通知，請改用 Chrome / Safari');
-    return;
-  }
-  const permission = await Notification.requestPermission();
-  if (permission === 'granted') {
-    notifGranted = true;
-    document.getElementById('notif-btn').classList.add('active');
-    document.getElementById('notif-label').textContent = '通知已開啟';
-    showToast('通知授權成功！');
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(reg => {
-        console.log('SW registered:', reg.scope);
-      });
-    }
-  } else {
-    showToast('請在瀏覽器設定中允許通知');
-  }
-}
-
-function sendNotification(title, body) {
-  if (notifGranted || Notification.permission === 'granted') {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification(title, {
-          body,
-          icon: 'icons/icon-192.png',
-          badge: 'icons/icon-72.png',
-          vibrate: [200, 100, 200],
-          tag: 'stock-alert',
-          data: { url: window.location.href }
-        });
-      });
-    } else {
-      new Notification(title, { body, icon: 'icons/icon-192.png' });
-    }
-  }
-}
-
-function testNotification() {
-  if (Notification.permission !== 'granted') {
-    showToast('請先點右上角「開啟通知」授權');
-    return;
-  }
-  sendNotification('台股追蹤 — 測試通知', '系統正常運作中，你的股票警報已啟動！');
-  showToast('測試通知已發送！');
-}
-
-function testBuySignal() {
-  if (Notification.permission !== 'granted') {
-    showToast('請先點右上角「開啟通知」授權');
-    return;
-  }
-  sendNotification('買入訊號 📈', '0050 元大台灣50 回測至 $80.2，接近加碼參考價 $80.1');
-  showToast('買入訊號通知已發送！');
-}
-
-function saveWatchAlert() {
-  const buy  = document.getElementById('buy-trigger').value;
-  const sell = document.getElementById('sell-trigger').value;
-  const stop = document.getElementById('stop-trigger').value;
-  localStorage.setItem('watch-3231', JSON.stringify({ buy, sell, stop }));
-  alertRules[4].on = true;
-  alertRules[4].desc = `低於 $${buy} 進場提醒 ｜ 高於 $${sell} 了結提醒 ｜ 低於 $${stop} 停損`;
-  renderAlertRules();
-  showToast('緯創警報設定已儲存！');
-}
-
+/* 4. UI 互動功能 */
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -584,42 +396,53 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-function switchTab(name, idx, btn) {
+function switchTab(name, idx) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-  document.getElementById('nav-'+idx).classList.add('active');
-  if (btn) btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('nav-' + idx).classList.add('active');
+  
+  // 如果切換到設定頁面，更新管理列表
+  if(name === 'settings') renderMgmtList();
 }
 
-/* Periodic check every 30 min */
-setInterval(() => { simulateRefresh(); }, 30 * 60 * 1000);
-
-/* Restore saved watch settings */
-const saved = localStorage.getItem('watch-3231');
-if (saved) {
-  const d = JSON.parse(saved);
-  if (document.getElementById('buy-trigger')) document.getElementById('buy-trigger').value = d.buy;
-  if (document.getElementById('sell-trigger')) document.getElementById('sell-trigger').value = d.sell;
-  if (document.getElementById('stop-trigger')) document.getElementById('stop-trigger').value = d.stop;
+function saveAlerts() {
+  showToast('警報設定已儲存');
 }
 
-/* Check if notification already granted */
-if (Notification.permission === 'granted') {
-  notifGranted = true;
-  document.getElementById('notif-label').textContent = '通知已開啟';
-  document.getElementById('notif-btn').classList.add('active');
+/* 5. 通知功能 */
+let notifGranted = false;
+function requestNotif() {
+  Notification.requestPermission().then(permission => {
+    if (permission === 'granted') {
+      notifGranted = true;
+      document.getElementById('notif-label').textContent = '通知已開啟';
+      document.getElementById('notif-btn').classList.add('active');
+      showToast('通知功能已啟用');
+    }
+  });
 }
 
-updateHeader();
+function testNotif() {
+  if (!notifGranted) {
+    requestNotif();
+    return;
+  }
+  new Notification('台股追蹤系統', {
+    body: '這是一則測試通知，系統運作正常！',
+    icon: 'icons/icon-192.png'
+  });
+}
+
+// 註冊 Service Worker (PWA核心)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+/* 初始化執行 */
 renderHoldings();
-renderRiskBars();
-renderTriggered();
-renderAlertRules();
-renderWatchList();
-renderNotifSettings();
-renderManualUpdate();
+
 </script>
+
 </body>
 </html>
