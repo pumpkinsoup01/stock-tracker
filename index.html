@@ -3,230 +3,235 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#1a3a6b">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="台股追蹤">
-<link rel="manifest" href="manifest.json">
-<title>台股追蹤系統 (RapidAPI 版)</title>
+<title>台股追蹤 - RapidAPI 修正版</title>
 <style>
 :root{
-  --blue:#2563eb;--blue-d:#1d4ed8;--blue-l:#eff6ff;
-  --green:#16a34a;--green-l:#f0fdf4;
-  --red:#dc2626;--red-l:#fef2f2;
-  --amber:#d97706;--amber-l:#fffbeb;
-  --bg:#f1f5f9;--card:#fff;--border:#e2e8f0;
-  --text:#0f172a;--text2:#64748b;--text3:#94a3b8;
-  --r:14px;--rs:8px;
+  --blue:#2563eb;--green:#16a34a;--red:#dc2626;--bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#0f172a;--text2:#64748b;
 }
 @media(prefers-color-scheme:dark){
-  :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#f1f5f9;--text2:#94a3b8;--text3:#475569;--blue-l:#1e3a5f;--green-l:#14332a;--red-l:#3b1414;--amber-l:#2d1f00;}
+  :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#f1f5f9;--text2:#94a3b8;}
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none}
-.hdr{background:var(--blue);color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:200}
-.hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.hdr-title{font-size:17px;font-weight:700}
-.hdr-sub{font-size:11px;opacity:.7;margin-top:1px}
-.hdr-actions{display:flex;gap:6px}
-.hdr-btn{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 11px;border-radius:20px;font-size:11px;cursor:pointer;white-space:nowrap}
-.tabs{display:flex;overflow-x:auto;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{padding:10px 14px;font-size:13px;color:rgba(255,255,255,.65);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500}
-.tab.active{color:#fff;border-bottom-color:#fff}
-.body{padding:12px 12px 90px;max-width:480px;margin:0 auto}
-.sec{display:none}.sec.active{display:block}
-.mrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.mc{background:var(--card);border-radius:var(--rs);padding:11px 13px;border:.5px solid var(--border)}
-.ml{font-size:10px;color:var(--text2);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
-.mv{font-size:18px;font-weight:700}
-.card{background:var(--card);border-radius:var(--r);border:.5px solid var(--border);padding:14px;margin-bottom:10px}
-.sl{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;margin:14px 0 8px}
-.badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600;display:inline-block}
-.b-red{background:var(--red-l);color:#991b1b}.b-green{background:var(--green-l);color:#166534}.b-blue{background:var(--blue-l);color:#1e40af}.b-amber{background:var(--amber-l);color:#92400e}.b-gray{background:var(--border);color:var(--text2)}
-.up{color:var(--red)}.dn{color:var(--green)}
-.hrow{display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:.5px solid var(--border)}
-.hi{flex:1;min-width:0}
-.hn{font-size:14px;font-weight:600;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-.hp{text-align:right;min-width:68px}
-.hp .price{font-size:14px;font-weight:700}
-.hpnl{text-align:right;min-width:62px}
-.hpnl .pct{font-size:13px;font-weight:700}
-.txrow{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:.5px solid var(--border)}
-.txdot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:700}
-.tx-buy{background:var(--red-l);color:var(--red)}.tx-sell{background:var(--green-l);color:var(--green)}
-.seg{display:grid;grid-template-columns:1fr 1fr;border:.5px solid var(--border);border-radius:var(--rs);overflow:hidden;margin-bottom:12px}
-.seg-btn{padding:10px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--text2)}
-.seg-btn.active{background:var(--blue);color:#fff}
-.fg{display:flex;flex-direction:column;gap:4px}
-.fg label{font-size:11px;font-weight:600;color:var(--text2)}
-.fg input,.fg select{padding:10px 11px;border:.5px solid var(--border);border-radius:var(--rs);background:var(--card);color:var(--text);font-size:14px;width:100%;outline:none}
-.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.btn{width:100%;padding:12px;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
-.btn-p{background:var(--blue);color:#fff}.btn-o{background:none;border:.5px solid var(--border);color:var(--text2)}.btn-d{background:none;border:.5px solid var(--red);color:var(--red)}
-.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:.5px solid var(--border);display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
-.bnav-btn{flex:1;padding:10px 4px 12px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text2);font-size:10px}
-.bnav-btn.active{color:var(--blue)}
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end;justify-content:center}
-.modal-bg.open{display:flex}
-.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:20px 16px 34px}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;animation:blink 2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spinning{animation:spin .7s linear infinite;display:inline-block}
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;z-index:400;opacity:0;transition:opacity .25s;pointer-events:none}
-.toast.show{opacity:1}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:sans-serif;background:var(--bg);color:var(--text);padding-bottom:80px;}
+.hdr{background:var(--blue);color:#fff;padding:15px;position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;}
+.btn-upd{background:rgba(255,255,255,0.2);border:none;color:#fff;padding:8px 15px;border-radius:20px;cursor:pointer;font-weight:600;}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:15px;}
+.mc{background:var(--card);padding:15px;border-radius:12px;border:1px solid var(--border);}
+.ml{font-size:12px;color:var(--text2);margin-bottom:5px;}
+.mv{font-size:20px;font-weight:700;}
+.card{background:var(--card);margin:0 15px 10px;padding:15px;border-radius:12px;border:1px solid var(--border);}
+.stock-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.stock-item:last-child{border:0;}
+.up{color:var(--red);} .dn{color:var(--green);}
+.loading-bar{height:3px;background:var(--green);position:fixed;top:0;left:0;width:0%;transition:0.3s;z-index:100;}
+.nav{position:fixed;bottom:0;width:100%;background:var(--card);display:flex;border-top:1px solid var(--border);padding:10px 0;}
+.nav-btn{flex:1;border:none;background:none;color:var(--text2);font-size:12px;cursor:pointer;}
+.nav-btn.active{color:var(--blue);font-weight:700;}
+.section{display:none;} .section.active{display:block;}
+input, select{width:100%;padding:10px;margin:5px 0 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);}
+.btn-save{width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-weight:700;}
 </style>
 </head>
 <body>
 
-<div class="hdr">
-  <div class="hdr-top">
-    <div>
-      <div class="hdr-title">台股追蹤 <span id="live-badge" style="font-size:10px;font-weight:400;opacity:.8"></span></div>
-      <div class="hdr-sub" id="last-upd">載入中...</div>
-    </div>
-    <div class="hdr-actions">
-      <button class="hdr-btn" onclick="refreshPrices()"><span id="spin">↻</span> 更新</button>
-      <button class="hdr-btn" id="notif-btn" onclick="reqNotif()">🔔 通知</button>
-    </div>
+<div id="loader" class="loading-bar"></div>
+<header class="hdr">
+  <div>
+    <div style="font-weight:700;">台股即時追蹤</div>
+    <div id="status" style="font-size:10px; opacity:0.8;">等待更新...</div>
   </div>
-  <div class="tabs">
-    <button class="tab active" onclick="sw('portfolio',0,this)">持倉</button>
-    <button class="tab" onclick="sw('trades',1,this)">交易</button>
-    <button class="tab" onclick="sw('watchlist',2,this)">觀察</button>
-    <button class="tab" onclick="sw('alerts',3,this)">警報</button>
-    <button class="tab" onclick="sw('settings',4,this)">設定</button>
+  <button class="btn-upd" onclick="refreshPrices()">🔄 刷新股價</button>
+</header>
+
+<div class="summary">
+  <div class="mc"><div class="ml">總市值</div><div class="mv" id="total-mv">$0</div></div>
+  <div class="mc"><div class="ml">總損益</div><div class="mv" id="total-pnl">--</div></div>
+</div>
+
+<div id="sec-portfolio" class="section active">
+  <div class="card" id="list-container">
+    <div style="text-align:center; color:var(--text2); padding:20px;">正在抓取股價...</div>
   </div>
 </div>
 
-<div class="body">
-  <div class="sec active" id="tab-portfolio">
-    <div class="mrow">
-      <div class="mc"><div class="ml">總市值</div><div class="mv" id="mv">—</div></div>
-      <div class="mc"><div class="ml">總損益</div><div class="mv" id="mpnl">—</div></div>
-      <div class="mc"><div class="ml">今日損益</div><div class="mv" id="mtoday">—</div></div>
-      <div class="mc"><div class="ml">報酬率</div><div class="mv" id="mpct">—</div></div>
-    </div>
-    <div class="card" id="holdings-list"></div>
+<div id="sec-settings" class="section">
+  <div class="card">
+    <h3 style="margin-bottom:10px;">新增持倉</h3>
+    <label>股票代號 (如 2330)</label>
+    <input type="text" id="in-code" placeholder="2330">
+    <label>持有股數</label>
+    <input type="number" id="in-shares" value="1000">
+    <label>買入成本</label>
+    <input type="number" id="in-cost" value="600">
+    <button class="btn-save" onclick="addTrade()">確認加入</button>
   </div>
-
-  <div class="sec" id="tab-trades">
-    <div class="sl">新增交易</div>
-    <div class="card">
-      <div class="fgrid">
-        <div class="fg"><label>股票代號</label><input id="fc" placeholder="例：2330"></div>
-        <div class="fg"><label>股數</label><input type="number" id="fs" placeholder="1000"></div>
-        <div class="fg"><label>成交價格</label><input type="number" id="fp" placeholder="600" step="0.1"></div>
-      </div>
-      <button class="btn btn-p" onclick="addTrade()">確認記錄</button>
-    </div>
-    <div class="card" id="txlist"></div>
-  </div>
-
-  <div class="sec" id="tab-watchlist">
-    <div class="card" id="watchlist"></div>
-  </div>
-
-  <div class="sec" id="tab-alerts">
-    <div class="card" id="active-alerts"></div>
-  </div>
-
-  <div class="sec" id="tab-settings">
-    <div class="sl">Yahoo Finance API 設定</div>
-    <div class="card">
-      <div class="fg">
-        <label>RapidAPI Key</label>
-        <input type="password" id="akey" placeholder="輸入 API Key">
-      </div>
-      <button class="btn btn-p" style="margin-top:10px" onclick="saveSettings()">儲存並更新</button>
-    </div>
-    <button class="btn btn-d" onclick="confirmReset()">清除所有資料</button>
+  
+  <div class="card">
+    <h3 style="margin-bottom:10px;">API 設定</h3>
+    <label>RapidAPI Key</label>
+    <input type="password" id="in-key">
+    <button class="btn-save" style="background:#64748b;" onclick="saveKey()">儲存金鑰</button>
+    <button class="btn-save" style="background:none; color:var(--red); margin-top:10px;" onclick="resetAll()">清除所有資料</button>
   </div>
 </div>
 
-<div class="bnav">
-  <button class="bnav-btn active" id="bn0" onclick="sw('portfolio',0,null)">📊持倉</button>
-  <button class="bnav-btn" id="bn1" onclick="sw('trades',1,null)">💱交易</button>
-  <button class="bnav-btn" id="bn2" onclick="sw('watchlist',2,null)">👁觀察</button>
-  <button class="bnav-btn" id="bn3" onclick="sw('alerts',3,null)">🔔警報</button>
-  <button class="bnav-btn" id="bn4" onclick="sw('settings',4,null)">⚙️設定</button>
-</div>
-
-<div class="toast" id="toast"></div>
+<nav class="nav">
+  <button class="nav-btn active" id="n-p" onclick="sw('portfolio')">📊 持倉</button>
+  <button class="nav-btn" id="n-s" onclick="sw('settings')">⚙️ 設定</button>
+</nav>
 
 <script>
-// --- 資料初始化 ---
-let DB = JSON.parse(localStorage.getItem('stkdb')||'{}');
-DB.trades = DB.trades || [];
-DB.watchlist = DB.watchlist || [{code:'2330', name:'台積電'}];
-// 填入你的 API Key
-DB.settings = DB.settings || {
-    apiKey: '3f74f6e5d8msh13b80ab438e0e49p1edd54jsn72daf4d9c04b', 
-    refreshInterval: 1800000
+// 1. 初始化資料 (如果沒資料，預設放台積電跟0050測試)
+const DEFAULT_TRADES = [
+  {code:'2330', shares:1000, cost:600, name:'台積電'},
+  {code:'0050', shares:1000, cost:150, name:'元大台灣50'}
+];
+
+let DB = JSON.parse(localStorage.getItem('stock_tracker_db')) || {
+  trades: DEFAULT_TRADES,
+  apiKey: '3f74f6e5d8msh13b80ab438e0e49p1edd54jsn72daf4d9c04b',
+  prices: {}
 };
-DB.prices = DB.prices || {};
-DB.prevClose = DB.prevClose || {};
 
-function save(){localStorage.setItem('stkdb',JSON.stringify(DB));}
+function save() { localStorage.setItem('stock_tracker_db', JSON.stringify(DB)); }
 
-// --- 核心：刷新股價 (Yahoo Finance RapidAPI) ---
+// 2. 核心：透過 Yahoo Finance API 抓取股價
 async function refreshPrices() {
-  const spin = document.getElementById('spin');
-  spin.classList.add('spinning');
-  
-  // 獲取代號列表，台股需判斷市場（目前預設處理 .TW，可依需求優化）
-  const codes = [...new Set([...DB.trades.map(t=>t.code), ...DB.watchlist.map(w=>w.code)])];
-  if(codes.length === 0) { spin.classList.remove('spinning'); return; }
+  const ld = document.getElementById('loader');
+  const st = document.getElementById('status');
+  ld.style.width = '30%';
+  st.textContent = '連線中...';
 
-  // 轉換為 Yahoo 格式 (例如 2330.TW)
-  const symbols = codes.map(c => c.length <= 4 ? c + '.TW' : c + '.TWO').join(',');
+  // 整理代號 (補上 .TW 或 .TWO)
+  const symbols = DB.trades.map(t => {
+    if (t.code.includes('.')) return t.code;
+    return t.code.length <= 4 ? `${t.code}.TW` : `${t.code}.TWO`;
+  }).join(',');
+
   const url = `https://yh-finance.p.rapidapi.com/market/v2/get-quotes?symbols=${symbols}`;
   
-  const options = {
-    method: 'GET',
-    headers: {
-      'X-RapidAPI-Key': DB.settings.apiKey,
-      'X-RapidAPI-Host': 'yh-finance.p.rapidapi.com'
-    }
-  };
-
   try {
-    const res = await fetch(url, options);
-    const data = await res.json();
-    const results = data.quoteResponse.result;
-
-    results.forEach(s => {
-      const code = s.symbol.split('.')[0];
-      DB.prices[code] = s.regularMarketPrice;
-      DB.prevClose[code] = s.regularMarketPreviousClose;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': DB.apiKey,
+        'X-RapidAPI-Host': 'yh-finance.p.rapidapi.com'
+      }
     });
 
-    const now = new Date();
-    document.getElementById('last-upd').textContent = `更新於 ${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
-    document.getElementById('live-badge').innerHTML = '<span class="live-dot"></span> 即時報價';
-    toast('股價已透過 Yahoo Finance 更新');
-  } catch (e) {
-    console.error('API Error:', e);
-    toast('更新失敗，請檢查 API Key 或額度');
-  } finally {
-    spin.classList.remove('spinning');
+    if (!response.ok) throw new Error('API 回應錯誤: ' + response.status);
+
+    const data = await response.json();
+    const results = data.quoteResponse.result;
+
+    if (!results || results.length === 0) {
+      st.textContent = '抓不到資料，請檢查代號';
+      return;
+    }
+
+    // 儲存價格
+    results.forEach(item => {
+      const pureCode = item.symbol.split('.')[0];
+      DB.prices[pureCode] = {
+        price: item.regularMarketPrice,
+        name: item.shortName || item.longName,
+        change: item.regularMarketChangePercent
+      };
+    });
+
+    ld.style.width = '100%';
+    st.textContent = '更新完成: ' + new Date().toLocaleTimeString();
+    setTimeout(() => ld.style.width = '0%', 500);
+    
     save();
-    renderAll();
+    render();
+  } catch (err) {
+    console.error(err);
+    st.textContent = '錯誤: ' + err.message;
+    alert('抓取失敗！請檢查 API Key 是否正確或額度已達上限。');
   }
 }
 
-// --- UI 渲染與計算邏輯 ---
-function calcHoldings(){
-  const m={};
-  DB.trades.forEach(tx => {
-    if(!m[tx.code]) m[tx.code]={code:tx.code, shares:0, costTotal:0};
-    if(tx.action==='buy'){
-        m[tx.code].shares += tx.shares;
-        m[tx.code].costTotal += tx.price * tx.shares;
-    }
+// 3. UI 渲染
+function render() {
+  const list = document.getElementById('list-container');
+  let totalMV = 0;
+  let totalCost = 0;
+
+  let html = '';
+  DB.trades.forEach(t => {
+    const pInfo = DB.prices[t.code] || { price: t.cost, change: 0, name: t.name || '未載入' };
+    const mv = pInfo.price * t.shares;
+    const pnl = (pInfo.price - t.cost) * t.shares;
+    const pnlPct = ((pInfo.price - t.cost) / t.cost * 100).toFixed(2);
+    
+    totalMV += mv;
+    totalCost += (t.cost * t.shares);
+
+    html += `
+      <div class="stock-item">
+        <div style="flex:1">
+          <div style="font-weight:700;">${pInfo.name} <small style="color:var(--text2); font-weight:400;">${t.code}</small></div>
+          <div style="font-size:12px; color:var(--text2);">${t.shares}股 | 成本 ${t.cost}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:700;">$${pInfo.price.toLocaleString()}</div>
+          <div class="${pnl >= 0 ? 'up' : 'dn'}" style="font-size:12px; font-weight:700;">
+            ${pnl >= 0 ? '+' : ''}${Math.round(pnl).toLocaleString()} (${pnlPct}%)
+          </div>
+        </div>
+      </div>
+    `;
   });
-  return Object.values(m).filter(h=>h.shares > 0).map(h => {
-    const lp = DB.prices[h.code] || 0;
-    const avg = h.costTotal / h.shares;
-    const mv = lp * h.shares;
-    const pnl = mv - h.costTotal
+
+  list.innerHTML = html || '<div style="text-align:center; padding:20px;">尚無持倉，請至設定新增</div>';
+  
+  // 更新摘要
+  const totalPnl = totalMV - totalCost;
+  document.getElementById('total-mv').textContent = '$' + Math.round(totalMV).toLocaleString();
+  const pnlEl = document.getElementById('total-pnl');
+  pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + Math.round(totalPnl).toLocaleString();
+  pnlEl.className = 'mv ' + (totalPnl >= 0 ? 'up' : 'dn');
+}
+
+// 4. 功能交互
+function addTrade() {
+  const code = document.getElementById('in-code').value.trim();
+  const shares = parseFloat(document.getElementById('in-shares').value);
+  const cost = parseFloat(document.getElementById('in-cost').value);
+  
+  if(!code || !shares || !cost) return alert('請填寫完整');
+  
+  DB.trades.push({ code, shares, cost });
+  save();
+  refreshPrices();
+}
+
+function saveKey() {
+  DB.apiKey = document.getElementById('in-key').value.trim();
+  save();
+  alert('金鑰已儲存，嘗試更新...');
+  refreshPrices();
+}
+
+function sw(sec) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + sec).classList.add('active');
+  document.getElementById('n-' + (sec === 'portfolio' ? 'p' : 's')).classList.add('active');
+}
+
+function resetAll() {
+  if(confirm('確定清除所有自訂資料？')) {
+    localStorage.removeItem('stock_tracker_db');
+    location.reload();
+  }
+}
+
+// 啟動
+document.getElementById('in-key').value = DB.apiKey;
+render();
+refreshPrices();
+</script>
+</body>
+</html>
