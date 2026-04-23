@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="theme-color" content="#1e40af">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="台股追蹤">
+<link rel="manifest" href="manifest.json">
+<title>台股追蹤系統</title>
+<style>
+:root{
+  --blue:#2563eb;--blue-d:#1d4ed8;--blue-l:#eff6ff;--blue-b:#bfdbfe;
+  --green:#16a34a;--green-l:#f0fdf4;
+  --red:#dc2626;--red-l:#fef2f2;
+  --amber:#d97706;--amber-l:#fffbeb;
+  --bg:#f1f5f9;--card:#fff;--bdr:#e2e8f0;
+  --t1:#0f172a;--t2:#64748b;--t3:#94a3b8;
+  --r:14px;--rs:9px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0f172a;--card:#1e293b;--bdr:#334155;
+  --t1:#f1f5f9;--t2:#94a3b8;--t3:#475569;
+  --blue-l:#1e3a5f;--green-l:#052e16;--red-l:#450a0a;--amber-l:#2d1f00;
+}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;overscroll-behavior:none}
+
+.hdr{background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:200}
+.hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.logo{font-size:17px;font-weight:800}
+.logo-sub{font-size:10px;font-weight:400;opacity:.7;margin-left:5px;vertical-align:middle}
+.hdr-r{display:flex;gap:6px}
+.hbtn{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap}
+.hbtn.on{background:rgba(255,255,255,.32)}
+.tabs{display:flex;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 14px;font-size:13px;color:rgba(255,255,255,.6);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:600}
+.tab.active{color:#fff;border-bottom-color:#fff}
+
+.pg{padding:12px 12px 96px;max-width:480px;margin:0 auto}
+.sec{display:none}.sec.active{display:block}
+
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.mc{background:var(--card);border-radius:var(--rs);padding:11px 13px;border:.5px solid var(--bdr)}
+.ml{font-size:10px;color:var(--t2);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.mv{font-size:18px;font-weight:800}
+
+.card{background:var(--card);border-radius:var(--r);border:.5px solid var(--bdr);padding:14px;margin-bottom:10px}
+.sl{font-size:10px;font-weight:700;color:var(--t2);letter-spacing:.07em;text-transform:uppercase;margin:14px 0 8px}
+.sl:first-child{margin-top:0}
+
+.badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700;white-space:nowrap;display:inline-block}
+.b-red{background:var(--red-l);color:#991b1b}
+.b-green{background:var(--green-l);color:#166534}
+.b-blue{background:var(--blue-l);color:#1e40af}
+.b-amber{background:var(--amber-l);color:#92400e}
+.b-gray{background:var(--bdr);color:var(--t2)}
+.up{color:#dc2626}.dn{color:#16a34a}
+
+/* Holdings */
+.hrow{padding:12px 0;border-bottom:.5px solid var(--bdr)}
+.hrow:last-child{border-bottom:none}
+.hrow-top{display:flex;align-items:center;gap:8px}
+.hinfo{flex:1;min-width:0}
+.hname{font-size:14px;font-weight:700;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.hmeta{font-size:11px;color:var(--t2);margin-top:2px}
+.hprice{text-align:right;min-width:70px}
+.hprice .p{font-size:14px;font-weight:800}
+.hprice .c{font-size:11px;margin-top:1px}
+.hpnl{text-align:right;min-width:62px}
+.hpnl .pct{font-size:13px;font-weight:800}
+.hpnl .abs{font-size:11px}
+
+/* RSI bar */
+.rsi-wrap{margin-top:8px;padding:8px 10px;background:var(--bg);border-radius:8px}
+.rsi-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.rsi-lbl{font-size:11px;font-weight:700;color:var(--t2)}
+.rsi-num{font-size:13px;font-weight:800}
+.rsi-track{height:8px;border-radius:4px;background:linear-gradient(to right,#3b82f6 0%,#3b82f6 30%,#22c55e 30%,#22c55e 70%,#ef4444 70%,#ef4444 100%);position:relative}
+.rsi-needle{position:absolute;top:-3px;width:3px;height:14px;background:var(--t1);border-radius:2px;transform:translateX(-50%);transition:left .5s ease}
+.rsi-zones{display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-top:2px}
+
+/* Trade */
+.txrow{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:.5px solid var(--bdr)}
+.txrow:last-child{border-bottom:none}
+.txdot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.dot-b{background:var(--red-l);color:var(--red)}
+.dot-s{background:var(--green-l);color:var(--green)}
+.txi{flex:1;min-width:0}
+.txt{font-size:13px;font-weight:700}
+.txm{font-size:11px;color:var(--t2);margin-top:1px}
+
+/* Form */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg.full{grid-column:1/-1}
+.fg label{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.05em}
+.fg input,.fg select{padding:10px 12px;border:.5px solid var(--bdr);border-radius:var(--rs);background:var(--card);color:var(--t1);font-size:14px;width:100%;outline:none;font-family:inherit}
+.fg input:focus,.fg select:focus{border-color:var(--blue)}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:.5px solid var(--bdr);border-radius:var(--rs);overflow:hidden;margin-bottom:12px}
+.seg-btn{padding:11px;font-size:14px;font-weight:700;border:none;background:none;cursor:pointer;color:var(--t2)}
+.seg-buy{background:var(--red);color:#fff}
+.seg-sell{background:var(--green);color:#fff}
+.cbox{background:var(--blue-l);border:.5px solid var(--blue-b);border-radius:var(--rs);padding:12px;margin-top:10px}
+.cr{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:var(--t2)}
+.cr.tot{font-weight:800;color:var(--t1);border-top:.5px solid var(--blue-b);margin-top:5px;padding-top:6px;font-size:13px}
+.btn{width:100%;padding:12px;border:none;border-radius:var(--rs);font-size:14px;font-weight:800;cursor:pointer;margin-top:8px}
+.btn-p{background:var(--blue);color:#fff}
+.btn-o{background:none;border:.5px solid var(--bdr);color:var(--t2)}
+.btn-d{background:none;border:.5px solid var(--red);color:var(--red)}
+
+/* Toggles */
+.trow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:.5px solid var(--bdr)}
+.trow:last-child{border-bottom:none}
+.ti .tn{font-size:13px;font-weight:700}
+.ti .td{font-size:11px;color:var(--t2);margin-top:2px;line-height:1.4}
+.tgl{width:44px;height:26px;border-radius:26px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.tgl.on{background:var(--blue)}.tgl.off{background:var(--bdr)}
+.tgl::after{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.tgl.on::after{left:21px}.tgl.off::after{left:3px}
+
+/* Watchlist */
+.wrow{display:flex;align-items:center;gap:8px;padding:11px 0;border-bottom:.5px solid var(--bdr)}
+.wrow:last-child{border-bottom:none}
+.wbar{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.wbf{height:100%;border-radius:3px}
+
+/* Alerts */
+.arow{display:flex;gap:10px;padding:11px 12px;border-radius:var(--rs);margin-bottom:8px;border:.5px solid var(--bdr);background:var(--card)}
+.arow.trig{border-color:var(--red);background:var(--red-l)}
+.arow.warn{border-color:var(--amber);background:var(--amber-l)}
+.arow.info{border-color:var(--blue);background:var(--blue-l)}
+.arow.good{border-color:var(--green);background:var(--green-l)}
+.adot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.at{font-size:13px;font-weight:700}
+.ad{font-size:12px;color:var(--t2);margin-top:2px;line-height:1.5}
+
+/* Status */
+.strip{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sdot{width:7px;height:7px;border-radius:50%;display:inline-block;animation:pulse 2s infinite}
+.sdot.live{background:var(--green)}.sdot.stale{background:var(--amber)}.sdot.fail{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.rbtn{background:none;border:.5px solid var(--bdr);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:4px;font-weight:600}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinning{animation:spin .7s linear infinite;display:inline-block}
+
+/* Bottom nav */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:.5px solid var(--bdr);display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
+.nb{flex:1;padding:10px 4px 12px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--t2);font-size:10px;font-weight:600}
+.nb.active{color:var(--blue)}
+.ni{font-size:22px;line-height:1}
+
+/* Modal */
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:flex-end;justify-content:center}
+.mbg.open{display:flex}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:20px 16px 36px;max-height:88vh;overflow-y:auto}
+.mhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.mt{font-size:17px;font-weight:800}
+.mclose{background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;color:var(--t2)}
+
+.empty{text-align:center;padding:36px 16px;color:var(--t2)}
+.ei{font-size:40px;margin-bottom:10px}
+.en{font-size:15px;font-weight:700;margin-bottom:4px;color:var(--t1)}
+.es{font-size:12px;line-height:1.6}
+
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;z-index:400;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+
+/* API error banner */
+.err-banner{background:var(--red-l);border:.5px solid #fca5a5;border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;font-size:12px;color:#991b1b;display:none}
+.err-banner.show{display:block}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <div class="logo">台股追蹤<span class="logo-sub" id="live-badge">載入中</span></div>
+      <div style="font-size:11px;opacity:.7;margin-top:1px" id="last-upd">初始化...</div>
+    </div>
+    <div class="hdr-r">
+      <button class="hbtn" onclick="refreshAll()"><span id="spin">↻</span> 更新</button>
+      <button class="hbtn" id="nbtn" onclick="reqNotif()">🔔</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="sw('portfolio',0,this)">持倉</button>
+    <button class="tab" onclick="sw('trade',1,this)">交易</button>
+    <button class="tab" onclick="sw('watch',2,this)">觀察</button>
+    <button class="tab" onclick="sw('alert',3,this)">警報</button>
+    <button class="tab" onclick="sw('setting',4,this)">設定</button>
+  </div>
+</div>
+
+<div class="pg">
+
+<!-- ══ 持倉 ══ -->
+<div class="sec active" id="tab-portfolio">
+  <div id="api-err" class="err-banner"></div>
+  <div class="mrow">
+    <div class="mc"><div class="ml">總市值</div><div class="mv" id="m-val">—</div></div>
+    <div class="mc"><div class="ml">總損益</div><div class="mv" id="m-pnl">—</div></div>
+    <div class="mc"><div class="ml">今日損益</div><div class="mv" id="m-today">—</div></div>
+    <div class="mc"><div class="ml">報酬率</div><div class="mv" id="m-pct">—</div></div>
+  </div>
+  <div class="strip">
+    <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t2)">
+      <span class="sdot live" id="sdot"></span>
+      <span id="pstatus">等待更新</span>
+    </div>
+    <button class="rbtn" onclick="refreshAll()"><span id="sp2">↻</span> 更新報價</button>
+  </div>
+  <div class="sl">持倉明細</div>
+  <div class="card" id="holdings-list">
+    <div class="empty"><div class="ei">📊</div><div class="en">尚無持倉</div><div class="es">到「交易」頁新增買入記錄</div></div>
+  </div>
+  <button class="btn btn-o" onclick="sw('trade',1,document.querySelectorAll('.tab')[1])" style="margin-top:0">+ 新增買賣交易</button>
+</div>
+
+<!-- ══ 交易 ══ -->
+<div class="sec" id="tab-trade">
+  <div class="sl">新增交易</div>
+  <div class="card">
+    <div class="seg">
+      <button class="seg-btn seg-buy" id="sb-buy" onclick="setAct('buy')">▲ 買入</button>
+      <button class="seg-btn" id="sb-sell" onclick="setAct('sell')">▼ 賣出</button>
+    </div>
+    <div class="fgrid">
+      <div class="fg"><label>股票代號</label><input id="fc" placeholder="0050" oninput="lookupName(this.value)"></div>
+      <div class="fg"><label>股票名稱</label><input id="fn" placeholder="自動帶入"></div>
+      <div class="fg"><label>股數（股）</label><input type="number" id="fs" placeholder="1000" min="1" oninput="calcTx()"></div>
+      <div class="fg"><label>成交價格（元）</label><input type="number" id="fp" placeholder="44.80" step="0.01" oninput="calcTx()"></div>
+      <div class="fg"><label>交易日期</label><input type="date" id="fd"></div>
+      <div class="fg"><label>手續費（元）</label><input type="number" id="ff" placeholder="自動估算" oninput="calcTx()"></div>
+      <div class="fg full"><label>備註</label><input id="fo" placeholder="選填"></div>
+    </div>
+    <div class="cbox" id="cbox" style="display:none">
+      <div class="cr"><span>成交金額</span><span id="ca">—</span></div>
+      <div class="cr"><span>手續費（0.1425%）</span><span id="cf">—</span></div>
+      <div class="cr"><span id="ctaxl">證交稅</span><span id="ctx">—</span></div>
+      <div class="cr tot"><span>實際<span id="cal">付出</span></span><span id="ctot" style="color:var(--blue)">—</span></div>
+    </div>
+    <button class="btn btn-p" id="tbtn" onclick="addTrade()">確認買入記錄</button>
+  </div>
+  <div class="sl">交易紀錄</div>
+  <div class="card" id="txlist">
+    <div class="empty"><div class="ei">📝</div><div class="en">尚無記錄</div></div>
+  </div>
+</div>
+
+<!-- ══ 觀察 ══ -->
+<div class="sec" id="tab-watch">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div class="sl" style="margin:0">觀察清單（<span id="wcount">0</span> 檔）</div>
+    <button class="rbtn" onclick="openWM()">+ 新增</button>
+  </div>
+  <div class="card" id="watchlist"></div>
+  <div class="sl">進場提醒</div>
+  <div class="card" id="walerts"></div>
+</div>
+
+<!-- ══ 警報 ══ -->
+<div class="sec" id="tab-alert">
+  <div class="sl">即時警示（<span id="acnt">0</span>）</div>
+  <div id="active-alerts"></div>
+  <div class="sl">RSI 警示規則</div>
+  <div class="card" id="rsi-rules"></div>
+  <div class="sl">一般警報</div>
+  <div class="card" id="arules"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+    <button class="btn btn-o" style="margin:0;font-size:12px" onclick="testN('stop')">測試停損通知</button>
+    <button class="btn btn-o" style="margin:0;font-size:12px" onclick="testN('rsi')">測試 RSI 通知</button>
+  </div>
+</div>
+
+<!-- ══ 設定 ══ -->
+<div class="sec" id="tab-setting">
+  <div class="sl">API 設定</div>
+  <div class="card">
+    <div class="fg" style="margin-bottom:8px">
+      <label>RapidAPI Key</label>
+      <input type="password" id="akey" placeholder="貼上 RapidAPI Key">
+    </div>
+    <div style="font-size:11px;color:var(--t2);margin-bottom:10px;padding:8px;background:var(--bg);border-radius:8px;line-height:1.6">
+      <strong>Host：</strong><code style="font-size:11px">yh-finance.p.rapidapi.com</code><br>
+      端點：<code style="font-size:10px">/market/v2/get-quotes</code>（股價）<br>
+      端點：<code style="font-size:10px">/stock/v2/get-chart</code>（RSI 歷史）
+    </div>
+    <div class="fg" style="margin-bottom:8px">
+      <label>自動更新頻率</label>
+      <select id="rfreq">
+        <option value="300000">每 5 分鐘</option>
+        <option value="1800000">每 30 分鐘</option>
+        <option value="3600000">每 1 小時</option>
+        <option value="0">手動</option>
+      </select>
+    </div>
+    <div class="fg" style="margin-bottom:8px">
+      <label>RSI 週期</label>
+      <select id="rperiod">
+        <option value="14" selected>14 日（標準）</option>
+        <option value="9">9 日（短線）</option>
+        <option value="21">21 日（長線）</option>
+      </select>
+    </div>
+    <button class="btn btn-p" onclick="saveSettings()">儲存並更新</button>
+  </div>
+
+  <div class="sl">RSI 閾值設定</div>
+  <div class="card">
+    <div class="fgrid">
+      <div class="fg"><label>超買警示（≥）</label><input type="number" id="rsi-ob" value="70"></div>
+      <div class="fg"><label>超賣進場（≤）</label><input type="number" id="rsi-os" value="30"></div>
+      <div class="fg"><label>強勢確認（≥）</label><input type="number" id="rsi-bull" value="55"></div>
+      <div class="fg"><label>偏弱警示（≤）</label><input type="number" id="rsi-bear" value="45"></div>
+    </div>
+    <button class="btn btn-o" onclick="saveRsi()">更新 RSI 閾值</button>
+  </div>
+
+  <div class="sl">通知規則</div>
+  <div class="card" id="nlist"></div>
+
+  <div class="sl">資料管理</div>
+  <div class="card">
+    <div style="font-size:13px;color:var(--t2);margin-bottom:10px;line-height:1.6">資料儲存於瀏覽器本機，匯出可備份。</div>
+    <button class="btn btn-o" onclick="exportData()">匯出 JSON 備份</button>
+    <button class="btn btn-o" onclick="document.getElementById('imp').click()">匯入備份</button>
+    <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="btn btn-d" onclick="confirmReset()">清除所有資料</button>
+  </div>
+</div>
+
+</div><!-- /pg -->
+
+<div class="bnav">
+  <button class="nb active" id="bn0" onclick="sw('portfolio',0,null)"><span class="ni">📊</span>持倉</button>
+  <button class="nb" id="bn1" onclick="sw('trade',1,null)"><span class="ni">💱</span>交易</button>
+  <button class="nb" id="bn2" onclick="sw('watch',2,null)"><span class="ni">👁</span>觀察</button>
+  <button class="nb" id="bn3" onclick="sw('alert',3,null)"><span class="ni">🔔</span>警報</button>
+  <button class="nb" id="bn4" onclick="sw('setting',4,null)"><span class="ni">⚙️</span>設定</button>
+</div>
+
+<!-- Watch Modal -->
+<div class="mbg" id="wm" onclick="if(event.target===this)closeWM()">
+  <div class="modal">
+    <div class="mhd"><div class="mt">新增觀察股</div><button class="mclose" onclick="closeWM()">✕</button></div>
+    <div class="fgrid">
+      <div class="fg"><label>股票代號</label><input id="wfc" placeholder="3231"></div>
+      <div class="fg"><label>股票名稱</label><input id="wfn" placeholder="緯創"></div>
+      <div class="fg"><label>進場提醒（低於）</label><input type="number" id="wfb" placeholder="128" step="0.1"></div>
+      <div class="fg"><label>停損提醒（低於）</label><input type="number" id="wfs2" placeholder="115" step="0.1"></div>
+      <div class="fg"><label>了結提醒（高於）</label><input type="number" id="wfp" placeholder="155" step="0.1"></div>
+      <div class="fg"><label>評分</label><input type="number" id="wfsc" placeholder="80" min="0" max="100"></div>
+    </div>
+    <button class="btn btn-p" onclick="addWatch()">確認新增</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══ CONSTANTS ══ */
+const API_KEY  = '3f74f6e5d8msh13b80ab438e0e49p1edd54jsn72daf4d9c04b';
+const API_HOST = 'yh-finance.p.rapidapi.com';
+const KNOWN = {
+  '0050':'元大台灣50','009816':'凱基台灣TOP50','2303':'聯電',
+  '4939':'亞電','3231':'緯創','1815':'富喬','8358':'金居',
+  '4960':'誠美材','5452':'佶優','3060':'銘異','2419':'仲琦',
+  '8105':'凌巨','2330':'台積電','2317':'鴻海','2454':'聯發科','2382':'廣達'
+};
+
+/* ══ DB ══ */
+let DB = JSON.parse(localStorage.getItem('stkdb3') || '{}');
+DB.trades    = DB.trades    || [];
+DB.watchlist = DB.watchlist || [
+  {code:'3231',name:'緯創',  score:88,buyAlert:128, stopAlert:115,sellAlert:155},
+  {code:'1815',name:'富喬',  score:72,buyAlert:null,stopAlert:null,sellAlert:null},
+  {code:'3060',name:'銘異',  score:70,buyAlert:null,stopAlert:null,sellAlert:null},
+  {code:'2419',name:'仲琦',  score:65,buyAlert:null,stopAlert:null,sellAlert:null},
+  {code:'4960',name:'誠美材',score:63,buyAlert:null,stopAlert:null,sellAlert:null},
+  {code:'8358',name:'金居',  score:61,buyAlert:null,stopAlert:null,sellAlert:null},
+  {code:'5452',name:'佶優',  score:58,buyAlert:null,stopAlert:null,sellAlert:null},
+  {code:'8105',name:'凌巨',  score:52,buyAlert:null,stopAlert:null,sellAlert:null},
+];
+DB.settings = DB.settings || {
+  apiKey: API_KEY, refreshInterval: 1800000, rsiPeriod: 14,
+  rsiOB:70, rsiOS:30, rsiBull:55, rsiBear:45,
+  notifStop:true, notifRsiOS:true, notifRsiOB:true, notifProfit:true, notifBuy:true
+};
+DB.prices    = DB.prices    || {};
+DB.prevClose = DB.prevClose  || {};
+DB.rsiData   = DB.rsiData   || {};
+
+/* Seed initial holdings */
+if (!DB.trades.length) {
+  [
+    {code:'0050',  name:'元大台灣50',   action:'buy',shares:89,  price:75.96,date:'2024-01-15',fee:95, note:'初始持倉'},
+    {code:'009816',name:'凱基台灣TOP50',action:'buy',shares:1008,price:10.87,date:'2024-01-15',fee:95, note:'初始持倉'},
+    {code:'2303',  name:'聯電',         action:'buy',shares:1,   price:62,   date:'2024-06-01',fee:20, note:'初始持倉'},
+    {code:'4939',  name:'亞電',         action:'buy',shares:1000,price:44.8, date:'2024-03-01',fee:308,note:'初始持倉'},
+  ].forEach((t,i) => DB.trades.push({...t, id:Date.now()+i}));
+  save();
+}
+
+function save() { localStorage.setItem('stkdb3', JSON.stringify(DB)); }
+
+/* ══ PORTFOLIO CALC ══ */
+function calcHoldings() {
+  const m = {};
+  for (const tx of DB.trades) {
+    if (!m[tx.code]) m[tx.code] = {code:tx.code, name:tx.name, shares:0, costTotal:0};
+    const h = m[tx.code];
+    if (tx.action === 'buy') {
+      h.costTotal += tx.price * tx.shares + (tx.fee||0);
+      h.shares    += tx.shares;
+    } else {
+      const avg = h.shares > 0 ? h.costTotal / h.shares : 0;
+      h.costTotal -= avg * tx.shares;
+      h.shares    -= tx.shares;
+    }
+  }
+  return Object.values(m).filter(h => h.shares > 0).map(h => {
+    const lp    = DB.prices[h.code] || h.costTotal / h.shares;
+    const avg   = h.costTotal / h.shares;
+    const mv    = lp * h.shares;
+    const pnl   = mv - h.costTotal;
+    const pct   = h.costTotal > 0 ? pnl / h.costTotal * 100 : 0;
+    const prev  = DB.prevClose[h.code];
+    const today = prev ? (lp - prev) * h.shares : null;
+    const rsi   = DB.rsiData[h.code]?.rsi ?? null;
+    return {...h, lp, avg, mv, pnl, pct, today, rsi};
+  });
+}
+
+/* ══ RSI CALC ══ */
+function calcRSI(closes, period) {
+  if (closes.length < period + 1) return null;
+  let g = 0, l = 0;
+  for (let i = 1; i <= period; i++) {
+    const d = closes[i] - closes[i-1];
+    d > 0 ? g += d : l -= d;
+  }
+  let ag = g / period, al = l / period;
+  for (let i = period + 1; i < closes.length; i++) {
+    const d = closes[i] - closes[i-1];
+    ag = (ag * (period-1) + Math.max(d,0))  / period;
+    al = (al * (period-1) + Math.max(-d,0)) / period;
+  }
+  return al === 0 ? 100 : parseFloat((100 - 100 / (1 + ag/al)).toFixed(1));
+}
+
+function rsiSig(rsi) {
+  if (rsi === null) return {lbl:'無資料',cls:'b-gray',color:'var(--t3)'};
+  const {rsiOB,rsiOS,rsiBull,rsiBear} = DB.settings;
+  if (rsi >= rsiOB)  return {lbl:`超買 ${rsi}`,  cls:'b-red',   color:'#dc2626'};
+  if (rsi <= rsiOS)  return {lbl:`超賣 ${rsi}`,  cls:'b-blue',  color:'#2563eb'};
+  if (rsi >= rsiBull)return {lbl:`強勢 ${rsi}`,  cls:'b-green', color:'#16a34a'};
+  if (rsi <= rsiBear)return {lbl:`偏弱 ${rsi}`,  cls:'b-amber', color:'#d97706'};
+  return {lbl:`RSI ${rsi}`, cls:'b-gray', color:'var(--t2)'};
+}
+
+/* ══ RENDER PORTFOLIO ══ */
+function renderPortfolio() {
+  const hs = calcHoldings();
+  const el = document.getElementById('holdings-list');
+
+  el.innerHTML = hs.length ? hs.map(h => {
+    const pc = h.pct >= 0 ? 'up' : 'dn';
+    const ps = h.pct >= 0 ? '+' : '';
+    const prev = DB.prevClose[h.code];
+    const chgPct = prev ? (h.lp-prev)/prev*100 : 0;
+    const cc = chgPct >= 0 ? 'up' : 'dn';
+    const sig = h.pct > 20 ? ['b-red','了結注意'] : h.pct < 1.5 && h.pct >= 0 ? ['b-amber','停損注意'] : h.pct < 0 ? ['b-red','虧損'] : ['b-gray','持有中'];
+    const rs = rsiSig(h.rsi);
+
+    const rsiHtml = `
+      <div class="rsi-wrap">
+        <div class="rsi-hd">
+          <span class="rsi-lbl">RSI (${DB.settings.rsiPeriod})</span>
+          <span class="rsi-num" style="color:${rs.color}">${h.rsi ?? '—'}</span>
+          <span class="badge ${rs.cls}">${rs.lbl}</span>
+        </div>
+        ${h.rsi !== null ? `
+        <div class="rsi-track"><div class="rsi-needle" style="left:${h.rsi}%"></div></div>
+        <div class="rsi-zones"><span>超賣0</span><span>30</span><span>50</span><span>70</span><span>100超買</span></div>` :
+        '<div style="font-size:11px;color:var(--t3)">更新後顯示</div>'}
+      </div>`;
+
+    return `<div class="hrow">
+      <div class="hrow-top">
+        <div class="hinfo">
+          <div class="hname">${h.name}<span class="badge ${sig[0]}">${sig[1]}</span></div>
+          <div class="hmeta">${h.code} · 均價$${h.avg.toFixed(2)} · ${h.shares.toLocaleString()}股</div>
+        </div>
+        <div class="hprice">
+          <div class="p">$${h.lp.toFixed(2)}</div>
+          <div class="c ${cc}">${chgPct>=0?'+':''}${chgPct.toFixed(2)}%</div>
+        </div>
+        <div class="hpnl ${pc}">
+          <div class="pct">${ps}${h.pct.toFixed(1)}%</div>
+          <div class="abs">${ps}$${Math.abs(Math.round(h.pnl)).toLocaleString()}</div>
+        </div>
+      </div>
+      ${rsiHtml}
+    </div>`;
+  }).join('') : '<div class="empty"><div class="ei">📊</div><div class="en">尚無持倉</div><div class="es">到「交易」頁新增買入記錄</div></div>';
+
+  // Summary
+  const tv  = hs.reduce((a,h)=>a+h.mv,0);
+  const tc  = hs.reduce((a,h)=>a+h.costTotal,0);
+  const tp  = tv-tc;
+  const tpct= tc>0?(tp/tc*100):0;
+  const td  = hs.reduce((a,h)=>a+(h.today||0),0);
+  const pc  = tp>=0?'up':'dn';
+  const ps  = tp>=0?'+':'';
+  document.getElementById('m-val').textContent  = '$'+Math.round(tv).toLocaleString();
+  const pm  = document.getElementById('m-pnl');  pm.className='mv '+pc;  pm.textContent=ps+Math.round(tp).toLocaleString();
+  const tm  = document.getElementById('m-today'); tm.className='mv '+(td>=0?'up':'dn'); tm.textContent=(td>=0?'+':'')+Math.round(td).toLocaleString();
+  const pm2 = document.getElementById('m-pct');  pm2.className='mv '+pc; pm2.textContent=ps+tpct.toFixed(2)+'%';
+}
+
+/* ══ RENDER TRADES ══ */
+function renderTrades() {
+  const el = document.getElementById('txlist');
+  const s = [...DB.trades].reverse();
+  if (!s.length) { el.innerHTML='<div class="empty"><div class="ei">📝</div><div class="en">尚無記錄</div></div>'; return; }
+  el.innerHTML = s.map(t => {
+    const ib = t.action==='buy';
+    return `<div class="txrow">
+      <div class="txdot ${ib?'dot-b':'dot-s'}">${ib?'買':'賣'}</div>
+      <div class="txi">
+        <div class="txt">${t.name} (${t.code})</div>
+        <div class="txm">${t.date} · ${t.shares.toLocaleString()}股 @$${t.price}${t.note?' · '+t.note:''}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:700;color:${ib?'var(--red)':'var(--green)'}">${ib?'-':'+'}$${Math.round(t.price*t.shares).toLocaleString()}</div>
+        <button onclick="delTrade(${t.id})" style="font-size:10px;color:var(--t3);background:none;border:none;cursor:pointer;margin-top:2px">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══ ADD TRADE ══ */
+let curAct = 'buy';
+function setAct(a) {
+  curAct = a;
+  document.getElementById('sb-buy').className  = 'seg-btn'+(a==='buy'?' seg-buy':'');
+  document.getElementById('sb-sell').className = 'seg-btn'+(a==='sell'?' seg-sell':'');
+  document.getElementById('tbtn').textContent   = a==='buy'?'確認買入記錄':'確認賣出記錄';
+  calcTx();
+}
+function lookupName(c) { const k=KNOWN[c.trim().toUpperCase()]; if(k) document.getElementById('fn').value=k; }
+function calcTx() {
+  const sh=parseFloat(document.getElementById('fs').value)||0;
+  const pr=parseFloat(document.getElementById('fp').value)||0;
+  if(!sh||!pr){document.getElementById('cbox').style.display='none';return;}
+  const amt=sh*pr;
+  const fee=parseFloat(document.getElementById('ff').value)||Math.max(20,Math.floor(amt*0.001425));
+  document.getElementById('ff').placeholder=Math.max(20,Math.floor(amt*0.001425));
+  const tax=curAct==='sell'?Math.floor(amt*0.003):0;
+  const tot=curAct==='buy'?amt+fee:amt-fee-tax;
+  document.getElementById('ca').textContent='$'+Math.round(amt).toLocaleString();
+  document.getElementById('cf').textContent='$'+Math.round(fee).toLocaleString();
+  document.getElementById('ctaxl').textContent=curAct==='sell'?'證交稅(0.3%)':'證交稅';
+  document.getElementById('ctx').textContent='$'+Math.round(tax).toLocaleString();
+  document.getElementById('cal').textContent=curAct==='buy'?'付出':'收入';
+  document.getElementById('ctot').textContent='$'+Math.round(tot).toLocaleString();
+  document.getElementById('cbox').style.display='block';
+}
+function addTrade() {
+  const code  =document.getElementById('fc').value.trim().toUpperCase();
+  const name  =document.getElementById('fn').value.trim()||KNOWN[code]||code;
+  const shares=parseInt(document.getElementById('fs').value);
+  const price =parseFloat(document.getElementById('fp').value);
+  const date  =document.getElementById('fd').value||new Date().toISOString().slice(0,10);
+  const fee   =parseInt(document.getElementById('ff').value)||Math.max(20,Math.floor(shares*price*0.001425));
+  const note  =document.getElementById('fo').value.trim();
+  if(!code||!shares||!price){toast('請填寫代號、股數、價格');return;}
+  if(curAct==='sell'){
+    const held=calcHoldings().find(h=>h.code===code);
+    if(!held||held.shares<shares){toast(`持倉不足，目前 ${held?.shares||0} 股`);return;}
+  }
+  DB.trades.push({id:Date.now(),code,name,action:curAct,shares,price,date,fee,note});
+  save();
+  ['fc','fn','fs','fp','ff','fo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fd').value=new Date().toISOString().slice(0,10);
+  document.getElementById('cbox').style.display='none';
+  toast(`${curAct==='buy'?'買入':'賣出'} ${name} 已記錄！`);
+  renderTrades(); renderPortfolio(); renderAlerts();
+  if (!DB.prices[code]) refreshAll(); // fetch price for new stock
+}
+function delTrade(id){
+  if(!confirm('確定刪除？'))return;
+  DB.trades=DB.trades.filter(t=>t.id!==id); save(); renderTrades(); renderPortfolio();
+}
+
+/* ══ WATCHLIST ══ */
+function renderWatchlist() {
+  document.getElementById('wcount').textContent=DB.watchlist.length;
+  const el=document.getElementById('watchlist');
+  const al=document.getElementById('walerts');
+  if(!DB.watchlist.length){el.innerHTML='<div class="empty"><div class="ei">👁</div><div class="en">尚無觀察股</div></div>';al.innerHTML='';return;}
+  el.innerHTML=DB.watchlist.map((w,i)=>{
+    const c=w.score>=80?'#2563eb':w.score>=65?'#d97706':'#94a3b8';
+    const lp=DB.prices[w.code]; const rsi=DB.rsiData[w.code]?.rsi;
+    const rs=rsiSig(rsi??null);
+    return`<div class="wrow">
+      <div style="min-width:80px"><div style="font-size:13px;font-weight:700">${w.name}</div><div style="font-size:10px;color:var(--t2)">${w.code}${lp?' $'+lp.toFixed(2):''}</div></div>
+      <div class="wbar"><div class="wbf" style="width:${w.score}%;background:${c}"></div></div>
+      <div style="min-width:24px;text-align:right;font-size:12px;font-weight:800;color:${c}">${w.score}</div>
+      ${rsi!=null?`<span class="badge ${rs.cls}" style="font-size:9px">${rsi}</span>`:''}
+      <span class="badge ${w.score>=80?'b-blue':w.score>=65?'b-amber':'b-gray'}" style="font-size:9px">${w.score>=80?'進場':w.score>=65?'留意':'暫緩'}</span>
+      <button onclick="delWatch(${i})" style="font-size:11px;color:var(--t3);background:none;border:none;cursor:pointer;padding:4px">✕</button>
+    </div>`;
+  }).join('');
+  const wa=DB.watchlist.filter(w=>w.buyAlert||w.stopAlert||w.sellAlert);
+  al.innerHTML=wa.length?wa.map(w=>`<div class="trow"><div class="ti"><div class="tn">${w.name}(${w.code})</div><div class="td">${w.buyAlert?'進場 < $'+w.buyAlert:''} ${w.stopAlert?'· 停損 < $'+w.stopAlert:''} ${w.sellAlert?'· 了結 > $'+w.sellAlert:''}</div></div></div>`).join(''):'<div style="text-align:center;font-size:13px;color:var(--t2);padding:12px">尚無提醒設定</div>';
+}
+function openWM(){document.getElementById('wm').classList.add('open');}
+function closeWM(){document.getElementById('wm').classList.remove('open');}
+function addWatch(){
+  const code=document.getElementById('wfc').value.trim().toUpperCase();
+  const name=document.getElementById('wfn').value.trim()||KNOWN[code]||code;
+  const score=parseInt(document.getElementById('wfsc').value)||50;
+  const buyAlert=parseFloat(document.getElementById('wfb').value)||null;
+  const stopAlert=parseFloat(document.getElementById('wfs2').value)||null;
+  const sellAlert=parseFloat(document.getElementById('wfp').value)||null;
+  if(!code){toast('請輸入代號');return;}
+  if(DB.watchlist.find(w=>w.code===code)){toast('已在觀察清單');return;}
+  DB.watchlist.unshift({code,name,score,buyAlert,stopAlert,sellAlert});
+  save();closeWM();renderWatchlist();toast(name+' 已加入觀察清單');refreshAll();
+}
+function delWatch(i){DB.watchlist.splice(i,1);save();renderWatchlist();}
+
+/* ══ ALERTS ══ */
+function renderAlerts(){
+  const hs=calcHoldings(); const triggered=[];
+  hs.forEach(h=>{
+    const {rsiOB,rsiOS,rsiBull,rsiBear}=DB.settings; const rsi=h.rsi;
+    if(rsi!==null){
+      if(rsi<=rsiOS) triggered.push({cls:'info',dot:'#2563eb',title:`RSI 超賣 — ${h.name}`,desc:`RSI ${rsi} ≤ ${rsiOS}，潛在進場機會`});
+      if(rsi>=rsiOB) triggered.push({cls:'trig',dot:'#dc2626',title:`RSI 超買 — ${h.name}`,desc:`RSI ${rsi} ≥ ${rsiOB}，留意回調風險`});
+      if(rsi>=rsiBull&&rsi<rsiOB) triggered.push({cls:'good',dot:'#16a34a',title:`強勢確認 — ${h.name}`,desc:`RSI ${rsi}，趨勢偏多`});
+      if(rsi<=rsiBear&&rsi>rsiOS) triggered.push({cls:'warn',dot:'#d97706',title:`RSI 偏弱 — ${h.name}`,desc:`RSI ${rsi} ≤ ${rsiBear}，注意支撐`});
+    }
+    if(h.pct>20) triggered.push({cls:'good',dot:'#16a34a',title:`獲利了結提醒 — ${h.name}`,desc:`報酬 +${h.pct.toFixed(1)}%，已達目標區間`});
+    if(h.pct>=0&&h.pct<1.5) triggered.push({cls:'warn',dot:'#d97706',title:`停損注意 — ${h.name}`,desc:`報酬 +${h.pct.toFixed(1)}%，緩衝極薄`});
+    if(h.pct<0) triggered.push({cls:'trig',dot:'#dc2626',title:`虧損警示 — ${h.name}`,desc:`虧損 ${h.pct.toFixed(1)}%，請確認是否停損`});
+  });
+  DB.watchlist.forEach(w=>{
+    const lp=DB.prices[w.code]; const rsi=DB.rsiData[w.code]?.rsi;
+    if(lp&&w.buyAlert&&lp<=w.buyAlert) triggered.push({cls:'info',dot:'#2563eb',title:`進場訊號 — ${w.name}`,desc:`現價 $${lp.toFixed(2)} 低於提醒 $${w.buyAlert}`});
+    if(lp&&w.sellAlert&&lp>=w.sellAlert) triggered.push({cls:'good',dot:'#16a34a',title:`了結訊號 — ${w.name}`,desc:`現價 $${lp.toFixed(2)} 達目標 $${w.sellAlert}`});
+    if(lp&&w.stopAlert&&lp<=w.stopAlert) triggered.push({cls:'trig',dot:'#dc2626',title:`停損警報 — ${w.name}`,desc:`現價 $${lp.toFixed(2)} 跌破停損 $${w.stopAlert}！`});
+    if(rsi!=null){
+      if(rsi<=DB.settings.rsiOS) triggered.push({cls:'info',dot:'#2563eb',title:`觀察股超賣 — ${w.name}`,desc:`RSI ${rsi}，可能進場機會`});
+      if(rsi>=DB.settings.rsiOB) triggered.push({cls:'trig',dot:'#dc2626',title:`觀察股超買 — ${w.name}`,desc:`RSI ${rsi}，留意風險`});
+    }
+  });
+  document.getElementById('acnt').textContent=triggered.length;
+  const ae=document.getElementById('active-alerts');
+  ae.innerHTML=triggered.length
+    ?triggered.map(a=>`<div class="arow ${a.cls}"><div class="adot" style="background:${a.dot}"></div><div><div class="at">${a.title}</div><div class="ad">${a.desc}</div></div></div>`).join('')
+    :'<div class="arow"><div class="adot" style="background:#16a34a"></div><div><div class="at">目前無異常</div><div class="ad">持倉與觀察股均正常</div></div></div>';
+
+  const {rsiOS,rsiOB,rsiBull,rsiBear,rsiPeriod}=DB.settings;
+  document.getElementById('rsi-rules').innerHTML=`
+    <div class="trow"><div class="ti"><div class="tn" style="color:#2563eb">超賣買入訊號</div><div class="td">RSI(${rsiPeriod}) ≤ ${rsiOS}：潛在進場點，推播通知</div></div><button class="tgl ${DB.settings.notifRsiOS?'on':'off'}" onclick="togR('notifRsiOS',this)"></button></div>
+    <div class="trow"><div class="ti"><div class="tn" style="color:#dc2626">超買警示</div><div class="td">RSI(${rsiPeriod}) ≥ ${rsiOB}：留意回調，推播通知</div></div><button class="tgl ${DB.settings.notifRsiOB?'on':'off'}" onclick="togR('notifRsiOB',this)"></button></div>
+    <div class="trow"><div class="ti"><div class="tn" style="color:#d97706">偏弱趨勢</div><div class="td">RSI(${rsiPeriod}) ≤ ${rsiBear}：趨勢轉弱注意</div></div><button class="tgl on" onclick="this.className='tgl '+(this.className.includes('on')?'off':'on')"></button></div>
+    <div class="trow"><div class="ti"><div class="tn" style="color:#16a34a">強勢確認</div><div class="td">RSI(${rsiPeriod}) ≥ ${rsiBull}：趨勢偏多</div></div><button class="tgl on" onclick="this.className='tgl '+(this.className.includes('on')?'off':'on')"></button></div>`;
+
+  const RULES=[
+    {key:'notifProfit',name:'獲利了結提醒',desc:'持倉報酬超 +20% 推播'},
+    {key:'notifStop',  name:'虧損停損警報',desc:'持倉虧損時推播'},
+    {key:'notifBuy',   name:'進場價位提醒',desc:'觀察股達進場提醒價推播'},
+  ];
+  const re=RULES.map(r=>`<div class="trow"><div class="ti"><div class="tn">${r.name}</div><div class="td">${r.desc}</div></div><button class="tgl ${DB.settings[r.key]?'on':'off'}" onclick="togR('${r.key}',this)"></button></div>`).join('');
+  document.getElementById('arules').innerHTML=re;
+  const nl=document.getElementById('nlist'); if(nl) nl.innerHTML=re;
+}
+function togR(k,btn){DB.settings[k]=!DB.settings[k];btn.className='tgl '+(DB.settings[k]?'on':'off');save();}
+
+/* ══ YH-FINANCE API ══ */
+const HEADERS = () => ({
+  'x-rapidapi-key':  DB.settings.apiKey,
+  'x-rapidapi-host': API_HOST,
+  'Content-Type':    'application/json'
+});
+
+async function fetchQuotes(codes) {
+  // yh-finance.p.rapidapi.com — /market/v2/get-quotes
+  const symbols = codes.map(c => c+'.TW').join('%2C');
+  const url = `https://${API_HOST}/market/v2/get-quotes?region=TW&symbols=${symbols}`;
+  const res = await fetch(url, {headers: HEADERS(), signal: AbortSignal.timeout(10000)});
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text().then(t=>t.slice(0,200))}`);
+  const data = await res.json();
+  const results = data?.quoteResponse?.result || [];
+  const out = {};
+  results.forEach(item => {
+    const code = (item.symbol||'').replace('.TW','');
+    if (item.regularMarketPrice) {
+      out[code] = {
+        price: item.regularMarketPrice,
+        prev:  item.regularMarketPreviousClose || item.regularMarketPrice,
+        name:  item.shortName || item.longName || KNOWN[code] || code
+      };
+    }
+  });
+  return out;
+}
+
+async function fetchChartForRSI(code) {
+  // yh-finance.p.rapidapi.com — /stock/v2/get-chart
+  const period = DB.settings.rsiPeriod;
+  const url = `https://${API_HOST}/stock/v2/get-chart?interval=1d&symbol=${code}.TW&range=3mo&region=TW`;
+  const res = await fetch(url, {headers: HEADERS(), signal: AbortSignal.timeout(10000)});
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  const closes = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close?.filter(v=>v!=null) || [];
+  if (closes.length < period + 1) return null;
+  return calcRSI(closes, period);
+}
+
+/* ══ MAIN REFRESH ══ */
+async function refreshAll() {
+  const spin1=document.getElementById('spin'); const spin2=document.getElementById('sp2');
+  spin1.classList.add('spinning'); spin2.classList.add('spinning');
+  document.getElementById('pstatus').textContent='更新中...';
+  document.getElementById('live-badge').textContent='● 更新中';
+  showErr('');
+
+  const hs=calcHoldings();
+  const codes=[...new Set([...hs.map(h=>h.code), ...DB.watchlist.map(w=>w.code)])];
+  let fetched=0; let errMsg='';
+
+  // 1. Fetch quotes
+  try {
+    const quotes = await fetchQuotes(codes);
+    for (const [code, q] of Object.entries(quotes)) {
+      DB.prevClose[code] = DB.prices[code] || q.prev;
+      DB.prices[code]    = q.price;
+      if (q.name && !KNOWN[code]) KNOWN[code] = q.name;
+      fetched++;
+    }
+  } catch(e) {
+    errMsg = e.message;
+    console.error('Quote fetch error:', e);
+  }
+
+  // 2. Fetch RSI (only stale ones, max 4 per refresh to save quota)
+  const rsiTargets = [...new Set([
+    ...hs.map(h=>h.code),
+    ...DB.watchlist.filter(w=>w.score>=60).map(w=>w.code)
+  ])].filter(code => {
+    const last = DB.rsiData[code]?.lastCalc;
+    return !last || Date.now()-last > 3600000;
+  }).slice(0, 4);
+
+  for (const code of rsiTargets) {
+    try {
+      const rsi = await fetchChartForRSI(code);
+      if (rsi !== null) DB.rsiData[code] = {rsi, lastCalc: Date.now()};
+    } catch(e) { console.warn('RSI fetch failed for', code, e.message); }
+  }
+
+  save();
+  spin1.classList.remove('spinning'); spin2.classList.remove('spinning');
+
+  const now=new Date();
+  const ts=`${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  document.getElementById('last-upd').textContent=`更新於 ${ts}`;
+
+  const sdot=document.getElementById('sdot');
+  if (fetched > 0) {
+    sdot.className='sdot live';
+    document.getElementById('live-badge').textContent='● 即時';
+    document.getElementById('pstatus').textContent=`${fetched} 檔已更新`;
+    toast(`已更新 ${fetched} 檔股價`);
+    checkAndNotify();
+  } else {
+    sdot.className='sdot fail';
+    document.getElementById('live-badge').textContent='✗ 失敗';
+    document.getElementById('pstatus').textContent='更新失敗';
+    const detail = errMsg.includes('403') ? '403 — 請確認 API Key 或訂閱狀態' :
+                   errMsg.includes('429') ? '429 — 本月免費次數已用完' :
+                   errMsg.includes('401') ? '401 — API Key 無效' :
+                   errMsg || '網路錯誤，請檢查連線';
+    showErr(`股價更新失敗：${detail}`);
+    toast(`更新失敗：${detail}`);
+  }
+
+  renderAll();
+}
+
+function showErr(msg) {
+  const el = document.getElementById('api-err');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.toggle('show', !!msg);
+}
+
+/* ══ NOTIFICATIONS ══ */
+function checkAndNotify(){
+  if(Notification.permission!=='granted')return;
+  calcHoldings().forEach(h=>{
+    if(DB.settings.notifRsiOS&&h.rsi!==null&&h.rsi<=DB.settings.rsiOS) sendN(`RSI 超賣 📊 ${h.name}`,`RSI ${h.rsi} 低於 ${DB.settings.rsiOS}`);
+    if(DB.settings.notifRsiOB&&h.rsi!==null&&h.rsi>=DB.settings.rsiOB) sendN(`RSI 超買 ⚠️ ${h.name}`,`RSI ${h.rsi} 高於 ${DB.settings.rsiOB}`);
+    if(DB.settings.notifProfit&&h.pct>20) sendN(`獲利提醒 💰 ${h.name}`,`報酬 +${h.pct.toFixed(1)}%`);
+    if(DB.settings.notifStop&&h.pct<-3) sendN(`停損警報 🔴 ${h.name}`,`虧損 ${h.pct.toFixed(1)}%`);
+  });
+  DB.watchlist.forEach(w=>{
+    const lp=DB.prices[w.code]; const rsi=DB.rsiData[w.code]?.rsi;
+    if(DB.settings.notifBuy&&lp&&w.buyAlert&&lp<=w.buyAlert) sendN(`進場訊號 📈 ${w.name}`,`$${lp.toFixed(2)} 低於提醒 $${w.buyAlert}`);
+    if(lp&&w.stopAlert&&lp<=w.stopAlert) sendN(`停損警報 🔴 ${w.name}`,`$${lp.toFixed(2)} 跌破停損 $${w.stopAlert}`);
+    if(DB.settings.notifRsiOS&&rsi!=null&&rsi<=DB.settings.rsiOS) sendN(`觀察股超賣 📊 ${w.name}`,`RSI ${rsi}`);
+  });
+}
+
+function testN(type){
+  if(Notification.permission!=='granted'){toast('請先點右上角 🔔 開啟通知');return;}
+  type==='stop'?sendN('停損警報 🔴 4939 亞電','現價 $43.2 跌破停損 $43.46！'):sendN('RSI 超賣 📊 2303 聯電','RSI 27，低於超賣門檻 30');
+}
+
+async function reqNotif(){
+  if(!('Notification' in window)){toast('此瀏覽器不支援通知');return;}
+  const p=await Notification.requestPermission();
+  if(p==='granted'){
+    document.getElementById('nbtn').classList.add('on');
+    if('serviceWorker' in navigator){try{await navigator.serviceWorker.register('sw.js');}catch(e){}}
+    toast('通知已開啟！');
+  } else toast('請在瀏覽器設定允許通知');
+}
+
+function sendN(title,body){
+  if(Notification.permission!=='granted')return;
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'icons/icon-192.png',badge:'icons/icon-72.png',vibrate:[200,100,200],requireInteraction:true}));
+  } else new Notification(title,{body,icon:'icons/icon-192.png'});
+}
+
+/* ══ SETTINGS ══ */
+function saveSettings(){
+  const k=document.getElementById('akey').value.trim(); if(k) DB.settings.apiKey=k;
+  DB.settings.refreshInterval=parseInt(document.getElementById('rfreq').value);
+  DB.settings.rsiPeriod=parseInt(document.getElementById('rperiod').value);
+  save(); resetTimer(); toast('設定已儲存！'); refreshAll();
+}
+function saveRsi(){
+  DB.settings.rsiOB  =parseFloat(document.getElementById('rsi-ob').value)||70;
+  DB.settings.rsiOS  =parseFloat(document.getElementById('rsi-os').value)||30;
+  DB.settings.rsiBull=parseFloat(document.getElementById('rsi-bull').value)||55;
+  DB.settings.rsiBear=parseFloat(document.getElementById('rsi-bear').value)||45;
+  save(); renderAlerts(); toast('RSI 閾值已更新！');
+}
+
+let rtimer=null;
+function resetTimer(){
+  if(rtimer)clearInterval(rtimer);
+  if(DB.settings.refreshInterval>0) rtimer=setInterval(refreshAll,DB.settings.refreshInterval);
+}
+
+/* ══ DATA MGMT ══ */
+function exportData(){
+  const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download=`stock-backup-${new Date().toISOString().slice(0,10)}.json`; a.click();
+}
+function importData(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.trades)throw 0;DB=d;save();renderAll();toast('匯入成功！');}catch{toast('格式不符');}};
+  r.readAsText(f);
+}
+function confirmReset(){if(!confirm('確定清除所有資料？'))return;localStorage.removeItem('stkdb3');location.reload();}
+
+/* ══ NAV / TOAST ══ */
+function sw(name,idx,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('bn'+idx).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2800);
+}
+function renderAll(){renderPortfolio();renderTrades();renderWatchlist();renderAlerts();}
+
+/* ══ INIT ══ */
+document.getElementById('akey').value   = DB.settings.apiKey||'';
+document.getElementById('rfreq').value  = DB.settings.refreshInterval||1800000;
+document.getElementById('rperiod').value= DB.settings.rsiPeriod||14;
+document.getElementById('rsi-ob').value = DB.settings.rsiOB||70;
+document.getElementById('rsi-os').value = DB.settings.rsiOS||30;
+document.getElementById('rsi-bull').value=DB.settings.rsiBull||55;
+document.getElementById('rsi-bear').value=DB.settings.rsiBear||45;
+document.getElementById('fd').value=new Date().toISOString().slice(0,10);
+if(Notification.permission==='granted')document.getElementById('nbtn').classList.add('on');
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+renderAll();
+resetTimer();
+setTimeout(refreshAll, 600);
+</script>
+</body>
+</html>
